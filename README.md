@@ -1,4 +1,6 @@
-# mace-onegpu
+# mace-million
+
+*Python package name: `mace_onegpu`.*
 
 This repository runs the MACE foundation model MACE-MPA-0 for **millions of atoms on one GPU**, with exactly the
 original MACE energies and forces. It contains the code for the paper *(paper in preparation)*.
