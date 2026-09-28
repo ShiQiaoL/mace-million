@@ -1,0 +1,11 @@
+*.pt
+*.model
+*.extxyz
+*.lammpstrj
+*.dump
+__pycache__/
+*.pyc
+runs/
+data/
+# Triton kernel sources generated at run time by conv_spline.py / fused_edge_conv.py
+mace_onegpu/_generated/

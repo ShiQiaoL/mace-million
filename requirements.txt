@@ -1,0 +1,13 @@
+# Tested with Python 3.11, CUDA 12.4, mace-torch 0.3.15, PyTorch 2.5.1, cuEquivariance 0.9.1, Triton 3.1.0.
+mace-torch==0.3.15
+torch==2.5.1
+cuequivariance==0.9.1
+cuequivariance-torch==0.9.1
+# cuEquivariance CUDA kernels: also install the matching cuequivariance-ops-torch-cu12 wheel for your CUDA version
+triton==3.1.0
+ase
+numpy
+# optional: NEP89 comparison (scripts/eval_vs_teacher.py --nep, scripts/distill_data.py NEP output)
+calorine
+# tests
+pytest

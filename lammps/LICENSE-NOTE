@@ -1,0 +1,10 @@
+License note for lammps/mliap_data_kokkos.patch
+
+The file mliap_data_kokkos.patch modifies src/KOKKOS/mliap_data_kokkos.cpp of LAMMPS
+(https://www.lammps.org, https://github.com/lammps/lammps). It is therefore a derivative work of LAMMPS and, like
+LAMMPS, is distributed under the terms of the GNU General Public License, version 2 (GPL-2.0). See the LICENSE file in
+the LAMMPS source distribution for the full text.
+
+This GPL-2.0 licence applies only to the patch in this directory. Everything else in this repository (the mace_onegpu
+Python package, scripts/, inputs/, examples/, tests/ and documentation) is distributed under the MIT License. See
+../LICENSE.

@@ -1,0 +1,44 @@
+# MACE-MPA-0 liquid water NPT density check (300 K, 1 atm), classical nuclei.
+variable        elems        index "O H"
+variable data_file   index  water128_1x1x1_N384.data
+variable model_file  index  model.pt
+variable equil_steps index  80000     # 40 ps at 0.5 fs
+variable prod_steps  index  120000    # 60 ps
+variable temp        index  300.0
+variable press       index  1.01325   # bar
+variable seed        index  20260919
+variable thermo_every index 100
+variable dt          index  0.0005    # ps
+variable dump_every  index  5000
+
+units           metal
+boundary        p p p
+atom_style      atomic
+atom_modify     map yes
+newton          on
+
+read_data       ${data_file}
+
+pair_style      mliap unified ${model_file} 0
+pair_coeff      * * ${elems}
+
+neighbor        2.0 bin
+neigh_modify    every 1 delay 0 check yes
+
+timestep        ${dt}
+velocity        all create ${temp} ${seed} mom yes rot yes dist gaussian
+
+# Nose-Hoover thermostat (Tdamp 0.1 ps) + isotropic MTK barostat (Pdamp 1 ps)
+fix             npt all npt temp ${temp} ${temp} 0.1 iso ${press} ${press} 1.0
+
+thermo          ${thermo_every}
+thermo_style    custom step temp pe ke etotal press vol density
+thermo_modify   flush yes
+
+run             ${equil_steps}
+write_restart   after_equil.restart
+reset_timestep  0
+dump            traj all custom ${dump_every} traj.lammpstrj id type x y z
+dump_modify     traj sort id
+run             ${prod_steps}
+write_restart   after_prod.restart

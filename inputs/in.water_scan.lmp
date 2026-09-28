@@ -1,0 +1,58 @@
+# MACE-MPA-0 / liquid water / ML-IAP memory-scan input.
+# All knobs come from -var on the command line:
+#   data_file    LAMMPS data file (atom_style atomic, type 1 = O, type 2 = H, Masses section present)
+#   model_file   converted ML-IAP model (.pt)
+#   run_steps    0 -> one force call (setup) only; N -> N MD steps
+#   skin         neighbor skin in Angstrom (LAMMPS default for units metal is 2.0)
+#   scale        isotropic box scale factor applied with remap (1.0 = as read; density ~ 1/scale^3)
+#   dump_forces  0 -> no dump; k -> dump per-atom forces every k steps (parity checks)
+#   thermo_every thermo output interval
+#   seed, temp   velocity initialisation
+#   dt           timestep in ps (default 0.0005 = 0.5 fs)
+#   rep          replicate the box rep x rep x rep after reading (default 1)
+# index-style so that "-var data_file ..." on the command line takes precedence (a later
+# "variable ... index" for an existing variable is ignored; "string" style would error out)
+variable        elems        index "O H"
+variable data_file    index  water64_2x2x2_N1536.data
+variable model_file   index  model.pt
+variable run_steps    index  0
+variable skin         index  2.0
+variable scale        index  1.0
+variable dump_forces  index  0
+variable thermo_every index  1
+variable seed         index  12345
+variable temp         index  300.0
+variable dt           index  0.0005
+variable rep          index  1
+
+units           metal
+boundary        p p p
+atom_style      atomic
+atom_modify     map yes
+newton          on
+
+read_data       ${data_file}
+if "${rep} > 1" then "replicate ${rep} ${rep} ${rep}"
+
+if "${scale} != 1.0" then &
+    "change_box all x scale ${scale} y scale ${scale} z scale ${scale} remap"
+
+pair_style      mliap unified ${model_file} 0
+pair_coeff      * * ${elems}
+
+neighbor        ${skin} bin
+neigh_modify    every 1 delay 0 check yes
+
+timestep        ${dt}
+velocity        all create ${temp} ${seed} mom yes rot yes dist gaussian
+fix             int all nve
+
+thermo          ${thermo_every}
+thermo_style    custom step atoms temp pe ke etotal press vol density cpu
+thermo_modify   flush yes
+
+if "${dump_forces} > 0" then &
+    "dump f all custom ${dump_forces} forces.dump id type x y z fx fy fz" &
+    "dump_modify f sort id format float %20.12e"
+
+run             ${run_steps}

@@ -1,0 +1,32 @@
+# Spot-check of the active-learning loop for large frames: recompute forces and virial pressure of every frame of an
+# MD segment's dump with one model (teacher or student) via rerun.  Element-general (-var elems).
+#   start_file / restart   as in in.al_segment.lmp (only defines atoms and types; positions come from the dump)
+#   model_file             ML-IAP model (.pt);  traj  dump of the segment;  dump_every  its frame interval
+#   tag                    output name: forces_${tag}.dump and thermo lines "Step c_pv" in the log
+variable start_file   index  start.data
+variable restart      index  0
+variable model_file   index  model.pt
+variable elems        index  "O H"
+variable traj         index  segment.lammpstrj
+variable dump_every   index  1000
+variable tag          index  model
+
+units           metal
+boundary        p p p
+atom_style      atomic
+atom_modify     map yes
+newton          on
+
+if "${restart} == 0" then "read_data ${start_file}" else "read_restart ${start_file}"
+
+pair_style      mliap unified ${model_file} 0
+pair_coeff      * * ${elems}
+neighbor        2.0 bin
+
+compute         pv all pressure NULL virial
+thermo          ${dump_every}
+thermo_style    custom step pe c_pv
+thermo_modify   flush yes
+dump            f all custom ${dump_every} forces_${tag}.dump id fx fy fz
+dump_modify     f sort id format float %.8e
+rerun           ${traj} dump x y z box yes

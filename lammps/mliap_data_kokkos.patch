@@ -1,0 +1,73 @@
+--- a/src/KOKKOS/mliap_data_kokkos.cpp
++++ b/src/KOKKOS/mliap_data_kokkos.cpp
+@@ -188,7 +188,7 @@
+     d_elems(i) = map(itype);
+   });
+ 
+-  modified(execution_space, NUMNEIGHS_MASK | IATOMS_MASK | IELEMS_MASK | ELEMS_MASK | JATOMS_MASK | PAIR_I_MASK | JELEMS_MASK | RIJ_MASK | IJ_MASK );
++  modified(execution_space, NUMNEIGHS_MASK | IATOMS_MASK | IELEMS_MASK | ELEMS_MASK | JATOMS_MASK | PAIR_I_MASK | JELEMS_MASK | RIJ_MASK | IJ_MASK , true);   // nosync patch: device-only consumers
+   eflag = eflag_in;
+   vflag = vflag_in;
+ }
+@@ -204,7 +204,10 @@
+   natomneigh = list->inum;
+   if (list->ghost == 1) natomneigh += list->gnum;
+   if (natomneigh_max < natomneigh) {
+-    natomneigh_max = natomneigh;
++    // headroom patch: grow with 10% margin; reallocating (incl. host mirror + memset) every step while the count
++    // creeps up cost ~0.25 s/step at 1M atoms
++    const bigint na64 = (bigint) natomneigh + natomneigh / 10 + 1024;
++    natomneigh_max = na64 > MAXSMALLINT ? natomneigh : (int) na64;
+ 
+     memoryKK->destroy_kokkos(k_iatoms,iatoms);
+     memoryKK->create_kokkos(k_iatoms, iatoms, natomneigh_max, "mliap_data:iatoms");
+@@ -247,23 +250,26 @@
+     d_numneighs(ii) = count;
+     contrib += count;
+   }, npairs);
+-  modified(execution_space, NUMNEIGHS_MASK);
++  modified(execution_space, NUMNEIGHS_MASK, true);   // nosync patch
+ 
+   if (nneigh_max < npairs) {
++    // headroom patch: capacity npairs + 10% (consumers use npairs, not the capacity)
++    const bigint cap64 = (bigint) npairs + npairs / 10 + 4096;
++    const int cap = cap64 > MAXSMALLINT ? npairs : (int) cap64;   // never overflow int32 near 2^31 pairs
+     memoryKK->destroy_kokkos(k_jatoms,jatoms);
+-    memoryKK->create_kokkos(k_jatoms, jatoms, npairs, "mliap_data:jatoms");
++    memoryKK->create_kokkos(k_jatoms, jatoms, cap, "mliap_data:jatoms");
+     memoryKK->destroy_kokkos(k_pair_i,pair_i);
+-    memoryKK->create_kokkos(k_pair_i, pair_i, npairs, "mliap_data:pair_i");
++    memoryKK->create_kokkos(k_pair_i, pair_i, cap, "mliap_data:pair_i");
+     memoryKK->destroy_kokkos(k_jelems,jelems);
+-    memoryKK->create_kokkos(k_jelems, jelems, npairs, "mliap_data:jelems");
++    memoryKK->create_kokkos(k_jelems, jelems, cap, "mliap_data:jelems");
+     memoryKK->destroy_kokkos(k_rij,rij);
+-    memoryKK->create_kokkos(k_rij, rij, npairs, 3, "mliap_data:rij");
++    memoryKK->create_kokkos(k_rij, rij, cap, 3, "mliap_data:rij");
+ 
+     if (gradgradflag == 0){
+       memoryKK->destroy_kokkos(k_graddesc,graddesc);
+-      memoryKK->create_kokkos(k_graddesc, graddesc, npairs, ndescriptors,3, "mliap_data:graddesc");
++      memoryKK->create_kokkos(k_graddesc, graddesc, cap, ndescriptors,3, "mliap_data:graddesc");
+     }
+-    nneigh_max = npairs;
++    nneigh_max = cap;
+    }
+ }
+ 
+@@ -315,11 +321,14 @@
+ 
+ /* ---------------------------------------------------------------------- */
+ 
++static constexpr uint64_t NOSYNC_DEVICE_MASK = NUMNEIGHS_MASK | IATOMS_MASK | IELEMS_MASK | ELEMS_MASK | JATOMS_MASK | PAIR_I_MASK | JELEMS_MASK | RIJ_MASK | IJ_MASK;
++
+ template<class DeviceType>
+ void MLIAPDataKokkos<DeviceType>::sync(ExecutionSpace space, uint64_t mask, bool ignore_auto_sync) {
+ 
+   if (space == Device) {
+-    if (lmp->kokkos->auto_sync && !ignore_auto_sync) modified(Host, mask, true);
++    // nosync patch: the neighbor data below are produced on the device and never touched on the host
++    if (lmp->kokkos->auto_sync && !ignore_auto_sync) modified(Host, mask & ~NOSYNC_DEVICE_MASK, true);
+     if (mask & IATOMS_MASK      ) k_iatoms         .sync_device();
+     if (mask & IELEMS_MASK      ) k_ielems         .sync_device();
+     if (mask & JATOMS_MASK      ) k_jatoms         .sync_device();
