@@ -201,7 +201,7 @@ throughput scaling, NVE energy logs, radial distribution functions, on-the-fly s
 cd benchmarks/figures/scripts && python fig4_speed_vs_N.py    # -> benchmarks/figures/fig4_speed_vs_N.pdf
 ```
 
-The throughput figures report steady-state rates of short runs (compilation and CUDA-graph capture excluded). In
-long production runs the neighbour list is rebuilt every ~16 steps for water at 300 K with a 2 Å skin, and each
-rebuild costs ~0.7 s of atom exchange and ghost construction inside LAMMPS at 10^6 atoms; see the paper for the
-resulting production-run rates.
+The throughput figures report steady-state rates of short runs (compilation and CUDA-graph capture excluded). For
+production runs, use the loop time that LAMMPS prints for a whole segment; it includes every neighbour-list rebuild
+and any communication overhead. In our 983,040-atom water runs the neighbour skin (2-4 A, rebuilds every 16-50
+steps) did not change the rate.
