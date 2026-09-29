@@ -190,3 +190,18 @@ python -m pytest tests
 
 MIT (see `LICENSE`), except `lammps/mliap_data_kokkos.patch`. That patch is a derivative of LAMMPS and is
 distributed under GPL-2.0 (see `lammps/LICENSE-NOTE`).
+
+## Benchmarks and source data
+
+`benchmarks/data/` holds the numbers behind the paper's figures (accuracy against DFT and against the teacher,
+throughput scaling, NVE energy logs, radial distribution functions, on-the-fly supervision histories), and
+`benchmarks/figures/scripts/` the scripts that draw the figures from them:
+
+```bash
+cd benchmarks/figures/scripts && python fig4_speed_vs_N.py    # -> benchmarks/figures/fig4_speed_vs_N.pdf
+```
+
+The throughput figures report steady-state rates of short runs (compilation and CUDA-graph capture excluded). In
+long production runs the neighbour list is rebuilt every ~16 steps for water at 300 K with a 2 Å skin, and each
+rebuild costs ~0.7 s of atom exchange and ghost construction inside LAMMPS at 10^6 atoms; see the paper for the
+resulting production-run rates.

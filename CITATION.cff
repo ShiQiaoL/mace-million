@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below (paper in preparation; the reference will be updated)."
+title: "mace-million: exact memory-lean MACE evaluation and distilled students for million-atom MD on one GPU"
+type: software
+version: 0.1.0
+date-released: 2026-09-28
+license: MIT
+repository-code: https://github.com/ShiQiaoL/mace-million
+authors:
+  - family-names: Liu
+    given-names: Xiaoqing
+    affiliation: Department of Mechanical Engineering, National University of Singapore
+    email: xqliu@nus.edu.sg
+  - family-names: Wang
+    given-names: Yangshuai
+    affiliation: Department of Mathematics, National University of Singapore
+  - family-names: Shen
+    given-names: Lei
+    affiliation: Department of Mechanical Engineering, National University of Singapore
+keywords:
+  - machine-learned interatomic potentials
+  - MACE
+  - LAMMPS
+  - molecular dynamics
+  - knowledge distillation
+  - active learning

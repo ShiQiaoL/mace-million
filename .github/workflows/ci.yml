@@ -1,0 +1,40 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install light dependencies (no GPU, no torch)
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest numpy matplotlib ase
+      - name: Byte-compile every Python file
+        run: python -m compileall -q mace_onegpu scripts tests benchmarks
+      - name: Shell syntax
+        run: for f in scripts/*.sh examples/*.sh; do bash -n "$f"; done
+      - name: Smoke tests (module imports are skipped without torch)
+        run: python -m pytest -q tests
+      - name: Regenerate the paper figures from the source data
+        run: |
+          cd benchmarks/figures/scripts
+          for f in fig1_concept.py fig2_exactness.py fig3_memory_vs_N.py fig4_speed_vs_N.py fig5_students.py fig6_dft_benchmark.py; do
+            python "$f"
+          done
+      - name: Patch applies to the stated LAMMPS commit
+        run: |
+          git clone -q --filter=blob:none --no-checkout https://github.com/lammps/lammps.git /tmp/lammps
+          cd /tmp/lammps
+          git checkout -q 5c6749b73a715615261e989ff15a70ce066ea8e5 -- src/KOKKOS/mliap_data_kokkos.cpp
+          patch -p1 --dry-run < "$GITHUB_WORKSPACE/lammps/mliap_data_kokkos.patch"

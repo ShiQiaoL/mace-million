@@ -1,0 +1,24 @@
+   NEP89 N=15360 rep1: Speed of this run = 7.27604e+06 atom*step/second.
+   NEP89 N=15360 rep2: Speed of this run = 7.74654e+06 atom*step/second.
+   NEP89 N=15360 rep3: Speed of this run = 7.76899e+06 atom*step/second.
+   NEP89 N=122880 rep1: Speed of this run = 1.7346e+07 atom*step/second.
+   NEP89 N=122880 rep2: Speed of this run = 1.73413e+07 atom*step/second.
+   NEP89 N=122880 rep3: Speed of this run = 1.73303e+07 atom*step/second.
+   NEP89 N=983040 rep1: Speed of this run = 1.95718e+07 atom*step/second.
+   NEP89 N=983040 rep2: Speed of this run = 1.95393e+07 atom*step/second.
+   NEP89 N=983040 rep3: Speed of this run = 1.9571e+07 atom*step/second.
+   NEP89 N=7864320 rep1: Speed of this run = 1.9789e+07 atom*step/second.
+   NEP89 N=7864320 rep2: Speed of this run = 1.97801e+07 atom*step/second.
+   NEP89 N=7864320 rep3: Speed of this run = 1.97781e+07 atom*step/second.
+   V5 N=15360 [rep1 run1 rc=0] steady 6.413e+05 atom-step/s  peak 0.8 GB
+   V5 N=15360 [rep1 run2 rc=0] steady 6.322e+05 atom-step/s  peak 0.8 GB
+   V5 N=15360 [rep1 run3 rc=0] steady 6.349e+05 atom-step/s  peak 0.8 GB
+   V5 N=122880 [rep2 run1 rc=0] steady 2.580e+06 atom-step/s  peak 3.5 GB
+   V5 N=122880 [rep2 run2 rc=0] steady 2.586e+06 atom-step/s  peak 3.5 GB
+   V5 N=122880 [rep2 run3 rc=0] steady 2.585e+06 atom-step/s  peak 3.5 GB
+   V5 N=983040 [rep4 run1 rc=0] steady 3.981e+06 atom-step/s  peak 4.8 GB
+   V5 N=983040 [rep4 run2 rc=0] steady 3.982e+06 atom-step/s  peak 4.8 GB
+   V5 N=983040 [rep4 run3 rc=0] steady 3.965e+06 atom-step/s  peak 4.8 GB
+   V5 N=7864320 [rep8 run1 rc=0] steady 3.738e+06 atom-step/s  peak 20.4 GB
+   V5 N=7864320 [rep8 run2 rc=0] steady 3.734e+06 atom-step/s  peak 20.4 GB
+   V5 N=7864320 [rep8 run3 rc=0] steady 3.737e+06 atom-step/s  peak 20.4 GB
