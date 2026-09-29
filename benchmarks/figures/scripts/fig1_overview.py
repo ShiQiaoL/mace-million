@@ -14,10 +14,10 @@ GRAY = dict(fc="#F3F2ED", ec="#9A9890", tc="#3C3C39", sc="#6B6A64")
 BADGE = dict(fc="#3B6D11", tc="white")
 CONT = "#B4B2A9"
 LINE = "#5F5E5A"
-plt.rcParams.update({"font.family": ["Arial", "Helvetica", "DejaVu Sans"], "font.size": 7.5})
+plt.rcParams.update({"font.family": ["Arial", "Helvetica", "DejaVu Sans"], "font.size": 7, "pdf.fonttype": 42})
 
 
-def box(ax, x, y, w, h, title, sub=None, style=GRAY, r=0.12, fs=7.5, ss=6.4):
+def box(ax, x, y, w, h, title, sub=None, style=GRAY, r=0.12, fs=7, ss=6):
     ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle=f"round,pad=0,rounding_size={r}", fc=style["fc"], ec=style["ec"], lw=0.8))
     if sub is None:
         ax.text(x + w / 2, y + h / 2, title, ha="center", va="center", fontsize=fs, color=style["tc"], weight="bold")
@@ -26,7 +26,7 @@ def box(ax, x, y, w, h, title, sub=None, style=GRAY, r=0.12, fs=7.5, ss=6.4):
         ax.text(x + w / 2, y + h * 0.31, sub, ha="center", va="center", fontsize=ss, color=style["sc"], linespacing=1.15)
 
 
-def badge(ax, cx, y, text, fs=6.3):
+def badge(ax, cx, y, text, fs=6):
     ax.text(cx, y, text, ha="center", va="center", fontsize=fs, color=BADGE["tc"], weight="bold", linespacing=1.2,
             bbox=dict(boxstyle="round,pad=0.35,rounding_size=0.9", fc=BADGE["fc"], ec="none"))
 
@@ -42,16 +42,16 @@ def line(ax, p, q, lw=0.9):
 def container(ax, x, y, w, h, label=None):
     ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=0.2", fc="none", ec=CONT, lw=0.8, ls=(0, (4, 3))))
     if label:
-        ax.text(x + 0.18, y + h - 0.13, label, ha="left", va="top", fontsize=6.8, color="#6B6A64", style="italic")
+        ax.text(x + 0.18, y + h - 0.13, label, ha="left", va="top", fontsize=6, color="#6B6A64", style="italic")
 
 
 def panel_title(ax, y, letter, text):
-    ax.text(0.3, y, letter, fontsize=10, weight="bold", va="top")
-    ax.text(0.75, y, text, fontsize=8.5, va="top")
+    ax.text(0.3, y, letter, fontsize=8, weight="bold", va="top")
+    ax.text(0.75, y, text, fontsize=7, va="top")
 
 
 def main():
-    fig = plt.figure(figsize=(7.2, 6.9))
+    fig = plt.figure(figsize=(180 / 25.4, 6.7))
     ax = fig.add_axes([0, 0, 1, 1])
     ax.set_xlim(0, 18)
     ax.set_ylim(0, 17.3)
@@ -77,7 +77,7 @@ def main():
     arrow(ax, (px + 8.3, ym), (15.15, ym))
     yrail = ya - 0.75
     line(ax, (16.375, ya), (16.375, yrail)); line(ax, (16.375, yrail), (1.625, yrail)); arrow(ax, (1.625, yrail), (1.625, ya))
-    ax.text(9.0, yrail - 0.12, "next step", ha="center", va="top", fontsize=6.3, color=GRAY["sc"])
+    ax.text(9.0, yrail - 0.12, "next step", ha="center", va="top", fontsize=6, color=GRAY["sc"])
     badge(ax, px + 1.45, ya + h + 0.85, "no host copies, arrays grow with headroom\nML-IAP overhead 0.25 → 0.002 s per step")
     badge(ax, px + 6.6, ya + h + 0.85, "MD step 0.43 → 0.28 s\n(10$^6$ water atoms, r$_\\mathregular{max}$ 4.5 Å student)")
 
@@ -100,12 +100,12 @@ def main():
             arrow(ax, (x - gap, yb + hb / 2), (x, yb + hb / 2))
     yc0 = yb - 1.45
     container(ax, X0, yc0, X1 - X0, 1.2)
-    ax.text(X0 + 0.22, yc0 + 0.85, "resident, all atoms:", fontsize=6.5, color="#3C3C39", va="center", weight="bold")
+    ax.text(X0 + 0.22, yc0 + 0.85, "resident, all atoms:", fontsize=6, color="#3C3C39", va="center", weight="bold")
     ax.text(X0 + 3.0, yc0 + 0.85, "positions (fp64) · int32 pair list · H$^{(1)}$ (512 per atom) · G · pair forces",
-            fontsize=6.5, color="#3C3C39", va="center")
-    ax.text(X0 + 0.22, yc0 + 0.35, "one chunk at a time:", fontsize=6.5, color=GREEN["tc"], va="center", weight="bold")
+            fontsize=6, color="#3C3C39", va="center")
+    ax.text(X0 + 0.22, yc0 + 0.35, "one chunk at a time:", fontsize=6, color=GREEN["tc"], va="center", weight="bold")
     ax.text(X0 + 3.0, yc0 + 0.35, "edge messages · node features · autograd graph  (freed after each chunk; padded to fixed shapes for CUDA graphs)",
-            fontsize=6.5, color=GREEN["tc"], va="center")
+            fontsize=6, color=GREEN["tc"], va="center")
     yB = yb + hb + 0.62
     badge(ax, 3.2, yB, "memory 1.55 MB → 4.6 kB per atom (×340 less)")
     badge(ax, 9.0, yB, "28.6 M atoms on one H200 (exact MACE-MPA-0)")
@@ -126,12 +126,12 @@ def main():
         box(ax, xc[k], yc, cw, hc, t, s, GREEN, ss=6.1)
         if k:
             arrow(ax, (xc[k] - cgap, yc + hc / 2), (xc[k], yc + hc / 2))
-    ax.text(xc[4] - cgap / 2, yc + hc / 2 + 0.2, "yes", ha="center", va="bottom", fontsize=6.2, color=GRAY["sc"])
+    ax.text(xc[4] - cgap / 2, yc + hc / 2 + 0.2, "yes", ha="center", va="bottom", fontsize=6, color=GRAY["sc"])
     # fail branch
     rx, rw, ry = xc[3] - 0.25, cw + 0.5, yc - 1.95
     box(ax, rx, ry, rw, hc, "Carve, label, fine-tune", "7 Å clusters around the worst atoms,\nbonds completed; teacher labels", GREEN, ss=6.1)
     arrow(ax, (xc[3] + cw / 2, yc), (xc[3] + cw / 2, ry + hc))
-    ax.text(xc[3] + cw / 2 + 0.12, yc - 0.3, "no", ha="left", va="center", fontsize=6.2, color=GRAY["sc"])
+    ax.text(xc[3] + cw / 2 + 0.12, yc - 0.3, "no", ha="left", va="center", fontsize=6, color=GRAY["sc"])
     ylo = ry - 0.3
     line(ax, (xc[3] + cw / 2, ry), (xc[3] + cw / 2, ylo)); line(ax, (xc[3] + cw / 2, ylo), (xc[0] + cw / 2, ylo)); arrow(ax, (xc[0] + cw / 2, ylo), (xc[0] + cw / 2, yc))
     yhi = yc + hc + 0.28
@@ -139,18 +139,18 @@ def main():
     yC = yhi + 0.62
     badge(ax, 3.2, yC, "student ×18 faster than the exact model\n(1/4.9 of NEP89 on the same GPU)")
     badge(ax, 9.0, yC, "checks ≈ 1.5% of the run time")
-    badge(ax, 14.7, yC, "production 4.3 M atom-steps/s at 10$^6$ atoms\n(stock model: out of memory above 86 k atoms)", 6.0)
+    badge(ax, 14.7, yC, "production 4.2 M atom-steps/s at 10$^6$ atoms\n(stock model: out of memory above 86 k atoms)", 6.0)
 
     # ================================================================ legend
     yl = 0.42
     ax.add_patch(FancyBboxPatch((X0, yl - 0.18), 0.45, 0.36, boxstyle="round,pad=0,rounding_size=0.08", fc=GREEN["fc"], ec=GREEN["ec"], lw=0.8))
-    ax.text(X0 + 0.6, yl, "changed or added in this work", va="center", fontsize=6.8, color="#3C3C39")
+    ax.text(X0 + 0.6, yl, "changed or added in this work", va="center", fontsize=6, color="#3C3C39")
     ax.add_patch(FancyBboxPatch((5.4, yl - 0.18), 0.45, 0.36, boxstyle="round,pad=0,rounding_size=0.08", fc=GRAY["fc"], ec=GRAY["ec"], lw=0.8))
-    ax.text(6.0, yl, "unchanged LAMMPS / MACE code", va="center", fontsize=6.8, color="#3C3C39")
+    ax.text(6.0, yl, "unchanged LAMMPS / MACE code", va="center", fontsize=6, color="#3C3C39")
     badge(ax, 14.7, yl, "badges: measured on one NVIDIA H200, water, 300 K", 6.5)
     for ext in ("pdf", "png"):
-        fig.savefig(os.path.join(OUT, f"fig7_pipeline.{ext}"), dpi=300)
-    print("wrote fig7_pipeline.pdf/png")
+        fig.savefig(os.path.join(OUT, f"fig1_overview.{ext}"), dpi=300)
+    print("wrote fig1_overview.pdf/png")
 
 
 if __name__ == "__main__":

@@ -198,7 +198,7 @@ throughput scaling, NVE energy logs, radial distribution functions, on-the-fly s
 `benchmarks/figures/scripts/` the scripts that draw the figures from them:
 
 ```bash
-cd benchmarks/figures/scripts && python fig4_speed_vs_N.py    # -> benchmarks/figures/fig4_speed_vs_N.pdf
+cd benchmarks/figures/scripts && python fig3_throughput.py   # -> benchmarks/figures/fig3_throughput.pdf
 ```
 
 The throughput figures report steady-state rates of short runs (compilation and CUDA-graph capture excluded). For

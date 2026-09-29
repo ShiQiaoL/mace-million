@@ -1,0 +1,14 @@
+job 637711.hopper-m-02 on hopper-23 started Tue Sep 29 02:02:13 PM +08 2026
+   [sio2 V1_16x1_l2_c2_r45 rep1 rc=0] N=1029000 pairs/atom 23.3 model 0.224s gap 0.002s -> 4.551e+06 atom-step/s  peak 3.9 GB
+   [sio2 V1_16x1_l2_c2_r45 rep2 rc=0] N=1029000 pairs/atom 23.3 model 0.224s gap 0.002s -> 4.558e+06 atom-step/s  peak 3.9 GB
+   [sio2 V1_16x1_l2_c2_r45 rep3 rc=0] N=1029000 pairs/atom 23.3 model 0.224s gap 0.003s -> 4.534e+06 atom-step/s  peak 3.9 GB
+   [sio2 V4_16x1_l2_c2_r40 rep1 rc=0] N=1029000 pairs/atom 15.3 model 0.175s gap 0.002s -> 5.818e+06 atom-step/s  peak 3.0 GB
+   [sio2 V4_16x1_l2_c2_r40 rep2 rc=0] N=1029000 pairs/atom 15.3 model 0.175s gap 0.002s -> 5.816e+06 atom-step/s  peak 3.0 GB
+   [sio2 V4_16x1_l2_c2_r40 rep3 rc=0] N=1029000 pairs/atom 15.3 model 0.176s gap 0.002s -> 5.808e+06 atom-step/s  peak 3.0 GB
+   [cuni V1_16x1_l2_c2_r45 rep1 rc=0] N=1000188 pairs/atom 42.0 model 0.328s gap 0.001s -> 3.034e+06 atom-step/s  peak 5.8 GB
+   [cuni V1_16x1_l2_c2_r45 rep2 rc=0] N=1000188 pairs/atom 42.0 model 0.328s gap 0.001s -> 3.038e+06 atom-step/s  peak 5.8 GB
+   [cuni V1_16x1_l2_c2_r45 rep3 rc=0] N=1000188 pairs/atom 42.0 model 0.329s gap 0.001s -> 3.032e+06 atom-step/s  peak 5.8 GB
+   [cuni V4_16x1_l2_c2_r40 rep1 rc=0] N=1000188 pairs/atom 18.0 model 0.187s gap 0.001s -> 5.323e+06 atom-step/s  peak 3.2 GB
+   [cuni V4_16x1_l2_c2_r40 rep2 rc=0] N=1000188 pairs/atom 18.0 model 0.187s gap 0.001s -> 5.326e+06 atom-step/s  peak 3.2 GB
+   [cuni V4_16x1_l2_c2_r40 rep3 rc=0] N=1000188 pairs/atom 18.0 model 0.187s gap 0.001s -> 5.325e+06 atom-step/s  peak 3.2 GB
+job finished Tue Sep 29 02:19:52 PM +08 2026

@@ -29,7 +29,7 @@ jobs:
       - name: Regenerate the paper figures from the source data
         run: |
           cd benchmarks/figures/scripts
-          for f in fig1_concept.py fig2_exactness.py fig3_memory_vs_N.py fig4_speed_vs_N.py fig5_students.py fig6_dft_benchmark.py fig7_pipeline.py; do
+          for f in fig1_overview.py fig2_exact.py fig3_throughput.py fig4_accuracy.py; do
             python "$f"
           done
       - name: Patch applies to the stated LAMMPS commit
