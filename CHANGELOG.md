@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1 (2026-09-30)
+
+- `pyproject.toml`: `pip install -e .`.
+- `examples/quickstart.sh` with a 192-atom water box (`examples/data/`): model conversion, 10 LAMMPS steps, force parity
+  against the fp64 reference with PASS/FAIL (`scripts/compare_forces.py --tol-max`).
+- `tests/gpu/test_threepass.py`: exactness, chunk invariance, periodic replica and fp32/fp64 checks (skipped without a GPU).
+- README: installation via pip, cmake from pip, tests section; consolidated benchmark figures.
+
 ## 0.1.0 (2026-09-28)
 
 First release, matching the manuscript draft.

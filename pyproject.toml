@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mace-onegpu"
+version = "0.1.1"
+description = "Exact receiver-chunked three-pass evaluation of MACE for million-atom MD on one GPU, with a LAMMPS ML-IAP interface"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+# The versions are the tested stack (README, "Tested stack").  cuequivariance-ops-torch-cu12 must be installed
+# separately, matching the CUDA version.
+dependencies = [
+    "mace-torch==0.3.15",
+    "torch==2.5.1",
+    "cuequivariance==0.9.1",
+    "cuequivariance-torch==0.9.1",
+    "triton==3.1.0",
+    "ase",
+    "numpy",
+]
+
+[project.optional-dependencies]
+nep = ["calorine"]
+test = ["pytest"]
+build = ["cmake"]
+
+[tool.setuptools]
+packages = ["mace_onegpu"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

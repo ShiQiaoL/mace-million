@@ -48,19 +48,15 @@ tests/            GPU-free smoke tests (pytest)
 
 ```bash
 conda create -n mace-onegpu python=3.11 && conda activate mace-onegpu
-pip install -r requirements.txt       # plus the cuequivariance-ops-torch-cu12 wheel that matches your CUDA
+pip install -r requirements.txt
+pip install cuequivariance-ops-torch-cu12==0.9.1 cmake   # CUDA kernels for your CUDA major version; cmake for LAMMPS
+pip install -e .
 ```
 
-The package is used from the source checkout. Put the repository root on `PYTHONPATH`:
-
-```bash
-export PYTHONPATH=/path/to/mace-onegpu:$PYTHONPATH
-```
-
-This is required for LAMMPS. The model file (`.pt`) pickles `mace_onegpu.mliap_threepass.ThreePassMLIAP` and
-`mace_onegpu.fused_conv.FusedConvTP` by module path, so the Python interpreter embedded in LAMMPS must be able to
-import `mace_onegpu`. The scripts in `scripts/` insert the repository root into `sys.path` themselves, so they also
-run without it. `scripts/al_driver.py` adds the root to `PYTHONPATH` of the LAMMPS processes it launches.
+`pip install -e .` makes `mace_onegpu` importable from any directory, including from the Python interpreter embedded
+in LAMMPS. That is required: the model file (`.pt`) pickles `mace_onegpu.mliap_threepass.ThreePassMLIAP` and
+`mace_onegpu.fused_conv.FusedConvTP` by module path. (Without the install, put the repository root on `PYTHONPATH`;
+the scripts in `scripts/` insert it into `sys.path` themselves.)
 
 At run time, `conv_spline.py` and `fused_edge_conv.py` write generated Triton kernel sources to
 `mace_onegpu/_generated/`. That directory must be writable.
@@ -73,6 +69,16 @@ See [`lammps/README.md`](lammps/README.md). In short: check out LAMMPS commit `5
 the patch only removes per-step host copies and reallocations.
 
 ## Quick start
+
+With a GPU, the Python environment and `lmp` on `PATH`, one script does the three steps below on a 192-atom water
+box and checks the result against the original MACE (fp64) forces:
+
+```bash
+bash examples/quickstart.sh        # ~2 min; downloads mace-mpa-0-medium.model (0.2 GB) unless TEACHER points to it
+```
+
+It ends with `PASS` when the LAMMPS forces agree with the reference to 1e-3 eV/A (the fp32 round-off of the model is
+about 1e-4 eV/A).
 
 **1. Build the three-pass LAMMPS model** on a GPU node (the fused cuEquivariance conversion needs CUDA):
 
@@ -176,11 +182,18 @@ The package modules also run as benchmarks and self-tests on a GPU: `python -m m
 `scripts/summarize_case.py` are the harness used for the memory scans. Their `MACE_MEMPROBE*` columns need a separate
 instrumentation that is not included here.
 
-Tests (no GPU needed; module imports are skipped when torch/mace/triton are not installed):
+## Tests
 
 ```bash
-python -m pytest tests
+python -m pytest tests                                           # smoke tests, no GPU: byte-compile and import
+MACE_ONEGPU_TEACHER=/path/mace-mpa-0-medium.model python -m pytest tests/gpu   # GPU: exactness of the three passes
+bash examples/quickstart.sh                                      # GPU + LAMMPS: end-to-end force parity
 ```
+
+`tests/gpu/test_threepass.py` checks, on the 192-atom water box, that the fp64 three-pass evaluation reproduces the
+full-graph model to 1e-9 eV/A, that the result does not depend on the chunk size, that a 2x2x2 periodic replica
+reproduces the base-cell forces atom by atom, and that fp32 stays within 1e-3 eV/A of fp64. The tests are skipped
+without CUDA or without `MACE_ONEGPU_TEACHER`. Last run (H200, mace-torch 0.3.15, PyTorch 2.5.1, 2026-09-30): 46 passed; `quickstart.sh` PASS with max|dF| = 2.1e-5 eV/A against the fp64 reference.
 
 ## Citation
 

@@ -103,6 +103,11 @@ def do_dump(a):
     print(f"RMS(dF) = {rms:.3e} eV/A   max|dF| = {fmax:.3e} eV/A   rel = {rel:.3e}")
     worst = int(np.argmax(np.abs(d).max(axis=1)))
     print(f"worst atom index (0-based, sorted by id) = {worst}: Fa={fa[worst]} Fb={fb[worst]}")
+    if a.tol_max is not None or a.tol_rel is not None:
+        ok = (a.tol_max is None or fmax <= a.tol_max) and (a.tol_rel is None or rel <= a.tol_rel)
+        print("PASS" if ok else "FAIL", f"(tolerance: max|dF| <= {a.tol_max} eV/A, rel <= {a.tol_rel})")
+        if not ok:
+            raise SystemExit(1)
 
 
 def main():
@@ -117,6 +122,8 @@ def main():
     d.add_argument("--b", required=True)
     d.add_argument("--log-a", default=None)
     d.add_argument("--log-b", default=None)
+    d.add_argument("--tol-max", type=float, default=None, help="exit 1 if max|dF| exceeds this (eV/A)")
+    d.add_argument("--tol-rel", type=float, default=None, help="exit 1 if the relative force error exceeds this")
     a = ap.parse_args()
     do_ref(a) if a.cmd == "ref" else do_dump(a)
 
