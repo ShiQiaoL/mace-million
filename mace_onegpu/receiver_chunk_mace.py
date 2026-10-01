@@ -215,6 +215,14 @@ class LocalGraph:
         self.vectors = vectors
 
 
+def head_index(model):
+    """Readout head used for multi-head models: MACE3P_HEAD (name), else 'default' if present, else the first head."""
+    heads = list(getattr(model, "heads", None) or ["default"])
+    name = os.environ.get("MACE3P_HEAD") or ("default" if "default" in heads else heads[0])
+    assert name in heads, f"head {name!r} not in model heads {heads}"
+    return heads.index(name), name
+
+
 def node_attrs_of(model, spidx_nodes, dtype):
     return torch.nn.functional.one_hot(spidx_nodes.long(), num_classes=len(model.atomic_numbers)).to(dtype)
 
@@ -254,7 +262,8 @@ class ReceiverChunkMACE:
         self.m, self.dt, self.chunk = model, dtype, chunk
         self.pad, self.node_bucket = pad, node_bucket
         self.e_cap = None
-        heads0 = torch.zeros(1, dtype=torch.long, device=next(model.parameters()).device)
+        self.hi, self.head_name = head_index(model)
+        heads0 = torch.full((1,), self.hi, dtype=torch.long, device=next(model.parameters()).device)
         z = torch.zeros(1, dtype=dtype, device=heads0.device)
         self.shift = float(model.scale_shift(z, heads0))
         self.scale = float(model.scale_shift(z + 1, heads0)) - self.shift
@@ -280,7 +289,7 @@ class ReceiverChunkMACE:
             for a in range(0, N, 1 << 20):
                 b = min(a + (1 << 20), N)
                 na = node_attrs_of(m, sysm.spidx[a:b], dt)
-                heads = torch.zeros(b - a, dtype=torch.long, device=dev)
+                heads = torch.full((b - a,), self.hi, dtype=torch.long, device=dev)
                 E += float(m.atomic_energies_fn(na)[torch.arange(b - a, device=dev), heads].double().sum())
         E += self.shift * N
 
@@ -323,7 +332,7 @@ class ReceiverChunkMACE:
             na = node_attrs_of(m, sysm.spidx[g.nodes_padded], dt)
             vec = g.vectors.to(dt).requires_grad_(True)
             h1l = H1[g.nodes_padded].detach().requires_grad_(True)
-            heads = torch.zeros(g.nC, dtype=torch.long, device=dev)
+            heads = torch.full((g.nC,), self.hi, dtype=torch.long, device=dev)
             with torch.enable_grad():
                 e = layer2_energy(m, g, na, vec, h1l, heads)
                 eb = self.scale * e.sum()
@@ -352,7 +361,7 @@ class ReceiverChunkMACE:
                 _g_pass = 'C'
             na = node_attrs_of(m, sysm.spidx[g.nodes_padded], dt)
             vec = g.vectors.to(dt).requires_grad_(True)
-            heads = torch.zeros(g.nC, dtype=torch.long, device=dev)
+            heads = torch.full((g.nC,), self.hi, dtype=torch.long, device=dev)
             with torch.enable_grad():
                 h1 = layer1(m, g, na, vec)
                 r1 = m.readouts[0](h1, heads)[torch.arange(g.nC, device=dev), heads]

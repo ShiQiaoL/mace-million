@@ -68,7 +68,7 @@ def do_ref(a):
     except TypeError:
         atoms = io.read(a.data, format="lammps-data", style="atomic", Z_of_type={1: 8, 2: 1}, units="metal")
     calc = MACECalculator(model_paths=a.model, device="cuda" if torch.cuda.is_available() else "cpu",
-                          default_dtype="float64", enable_cueq=False)
+                          default_dtype="float64", enable_cueq=False, **({"head": a.head} if a.head else {}))
     atoms.calc = calc
     e = atoms.get_potential_energy()
     f = atoms.get_forces()
@@ -117,6 +117,7 @@ def main():
     r.add_argument("--model", required=True)
     r.add_argument("--data", required=True)
     r.add_argument("--out", required=True)
+    r.add_argument("--head", default=None, help="readout head of a multi-head model (e.g. omat_pbe for MACE-MH-1)")
     d = sub.add_parser("dump")
     d.add_argument("--a", required=True)
     d.add_argument("--b", required=True)

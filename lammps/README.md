@@ -81,6 +81,17 @@ cmake --build . -j 12
 - `OMP_NUM_THREADS=1` and `MKL_THREADING_LAYER=GNU` are recommended.
 - Put the repository root on `PYTHONPATH` so that LAMMPS can unpickle `mace_onegpu.*` from the model `.pt` file.
 
+## LAMMPS's own tests
+
+`ctest -R mliap` (build with `-D ENABLE_TESTING=ON`) gives the same result on the patched and on the unpatched build
+of the reference commit (H200 node, 2026-10-01): the five `ManybodyPairStyle:mliap_*` tests (nn, snap_chem,
+snap_linear, snap_quadratic, so3) pass; in `TestMliapPyUnified`, `VersusLJMelt` passes and `VersusLJMeltGhost` fails
+with bit-identical numbers on both builds (an upstream issue of the CPU path with ghost neighbours). The two Kokkos
+variants of that test are skipped by LAMMPS itself in GPU builds; the Kokkos path changed by the patch is exercised by
+`tests/gpu/` and `examples/quickstart.sh` of this repository. When linking the test executables, put GCC's own
+`libstdc++` first (`-D CMAKE_EXE_LINKER_FLAGS="-L<gcc>/lib64 -Wl,-rpath,<gcc>/lib64"`) if the Python environment
+ships an older one.
+
 ## License
 
 See `LICENSE-NOTE`. The patch is a derivative of LAMMPS and is distributed under GPL-2.0.

@@ -1,0 +1,51 @@
+job 641788.hopper-m-02 on hopper-18 started Thu Oct  1 09:03:53 PM +08 2026
+NVIDIA H200
+== exactness, fp64
+  L=5 forward 1.0s backward 0.9s  resident X_0..X_L 17408 B/atom
+L-pass: E=-931.206425 eV (-4.850033/atom)  t=1.86s (1.030e+02 atom-step/s)  peak=0.40 GB (2059.8 kB/atom)
+reference: |edge_vec(input) - edge_vec(fp64)|max = 2.38e-07 A
+CHECK vs original SevenNet on the 192-atom base cell: dE/atom=+0.000e+00 eV  max|dF|=2.887e-15  RMS(dF)=6.119e-16 eV/A  (all 192 atoms)
+  L=5 forward 1.1s backward 1.8s  resident X_0..X_L 17408 B/atom
+L-pass: E=-59597.211171 eV (-4.850033/atom)  t=2.90s (4.240e+03 atom-step/s)  peak=10.30 GB (838.5 kB/atom)
+reference: |edge_vec(input) - edge_vec(fp64)|max = 2.38e-07 A
+CHECK vs original SevenNet on the 192-atom base cell: dE/atom=+0.000e+00 eV  max|dF|=4.399e-13  RMS(dF)=7.512e-14 eV/A  (all 12,288 atoms)
+== fp32 vs fp64 and against stock, memory
+  L=5 forward 0.8s backward 1.0s  resident X_0..X_L 8704 B/atom
+L-pass: E=-59597.213883 eV (-4.850034/atom)  t=1.78s (6.895e+03 atom-step/s)  peak=19.87 GB (1617.3 kB/atom)
+reference: |edge_vec(input) - edge_vec(fp64)|max = 2.38e-07 A
+stock SevenNet on N=12,288: E=-59597.214844  t=1.82s  peak=69.79 GB (5679.1 kB/atom)  max|F_stock - F_Lpass|=1.466e-06
+    _w3j_1_2_1 = self._w3j_1_2_1
+    mul_27 = _w3j_1_2_1 * 1.7320508075688772;  _w3j_1_2_1 = None
+RuntimeError: CUDA out of memory. Tried to allocate 18.35 GiB. GPU 0 has a total capacity of 139.80 GiB of which 14.23 GiB is free. Including non-PyTorch memory, this process has 125.56 GiB memory in use. Of the allocated memory 124.04 GiB is allocated by PyTorch, and 812.33 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+
+    reshape_16 = einsum_8.reshape(getitem_5, 640);  einsum_8 = getitem_5 = None
+    cat = torch.cat([reshape_10, reshape_13, reshape_16], dim = 1);  reshape_10 = reshape_13 = reshape_16 = None
+RuntimeError: CUDA out of memory. Tried to allocate 48.94 GiB. GPU 0 has a total capacity of 139.80 GiB of which 15.02 GiB is free. Including non-PyTorch memory, this process has 124.77 GiB memory in use. Of the allocated memory 123.45 GiB is allocated by PyTorch, and 614.66 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+
+== largest N, fp32 (L-pass only)
+SevenNet 7net-0: L=5 r_max=5.0 dtype=float32 N=983,040 edges/atom=52.2 chunk=16384
+  L=5 forward 14.4s backward 49.8s  resident X_0..X_L 8704 B/atom
+L-pass: E=-4767777.112172 eV (-4.850034/atom)  t=64.18s (1.532e+04 atom-step/s)  peak=55.76 GB (56.7 kB/atom)
+SevenNet 7net-0: L=5 r_max=5.0 dtype=float32 N=3,145,728 edges/atom=52.2 chunk=16384
+  L=5 forward 44.6s backward 162.9s  resident X_0..X_L 8704 B/atom
+L-pass: E=-15256886.758612 eV (-4.850034/atom)  t=207.53s (1.516e+04 atom-step/s)  peak=91.96 GB (29.2 kB/atom)
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 9.99 GiB. GPU 0 has a total capacity of 139.80 GiB of which 1.33 GiB is free. Including non-PyTorch memory, this process has 138.46 GiB memory in use. Of the allocated memory 118.96 GiB is allocated by PyTorch, and 18.77 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+job finished Thu Oct  1 09:12:31 PM +08 2026
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			Resource Usage on 2026-10-01 21:12:32.084999:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	JobId: 641788.hopper-m-02
+	Project: CFP04-CF-019
+	Exit Status: 0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	NCPUs: Requested(12), Used(12)
+	CPU Time Used: 00:08:07
+	Memory: Requested(225gb), Used(4437972kb)
+	Vmem Used: 161936728kb
+	Walltime: Requested(02:00:00), Used(00:08:44)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	Execution Nodes Used: (hopper-18:ngpus=1:ncpus=12:mem=235929600kb)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	No GPU-related information available for this job.
