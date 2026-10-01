@@ -19,7 +19,8 @@ ps.apply()
 N_exact = np.array([24000, 41472, 98304, 192000, 421824, 786432, 1536000, 3000000, 6291456, 12288000])
 t_exact = np.array([0.20, 0.30, 0.56, 1.15, 2.47, 4.63, 9.04, 17.62, 36.69, 72.21])
 N_stock, t_stock = np.array([12288, 41472]), np.array([0.0788, 0.2388])
-PROD = [dict(seg=1, rate=3.418e6, rate_all=983040 * 1e5 / 29168, rho=0.9059), dict(seg=2, rate=4.185e6, rate_all=983040 * 1e5 / 23840, rho=0.9080)]
+# job84 (636489): LAMMPS loop time and total cycle time (incl. model build + teacher checks) per 100-ps segment
+PROD = [dict(seg=1, rate=3.418e+06, rate_all=3.370e+06, rho=0.9059), dict(seg=2, rate=4.185e+06, rate_all=4.123e+06, rho=0.908), dict(seg=3, rate=4.330e+06, rate_all=4.269e+06, rho=0.9092), dict(seg=4, rate=4.514e+06, rate_all=4.458e+06, rho=0.91), dict(seg=5, rate=4.504e+06, rate_all=4.449e+06, rho=0.9104), dict(seg=6, rate=4.513e+06, rate_all=4.457e+06, rho=0.9108), dict(seg=7, rate=4.512e+06, rate_all=4.456e+06, rho=0.9112), dict(seg=8, rate=4.517e+06, rate_all=4.457e+06, rho=0.9115), dict(seg=9, rate=4.260e+06, rate_all=4.210e+06, rho=0.9118), dict(seg=10, rate=4.513e+06, rate_all=4.455e+06, rho=0.9121)]
 
 
 def e2():
@@ -96,7 +97,7 @@ ps.title(c, "Supervision lowers the student's error segment by segment")
 seg = np.array([p["seg"] for p in PROD])
 d.plot(seg, [p["rate"] / 1e6 for p in PROD], "-o", color=ps.C["student"], label="molecular dynamics only")
 d.plot(seg, [p["rate_all"] / 1e6 for p in PROD], "--o", color=ps.C["student"], mfc="white", label="including teacher checks")
-d.set_xlim(0.5, 10.5); d.set_xticks(range(1, 11)); d.set_ylim(0, 5)
+d.set_xlim(0.5, 10.5); d.set_xticks(range(1, 11)); d.set_ylim(0, 5.5)
 d.set_xlabel("100-ps segment of the 983,040-atom run"); d.set_ylabel("Throughput (10$^6$ atom-steps s$^{-1}$)")
 d.legend(loc="lower right", handlelength=1.8)
 ps.title(d, "Production run: above 4 × 10$^6$ after equilibration")

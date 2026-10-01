@@ -53,6 +53,10 @@ pip install cuequivariance-ops-torch-cu12==0.9.1 cmake   # CUDA kernels for your
 pip install -e .
 ```
 
+If large pip downloads are unreliable on your cluster, install PyTorch first from the conda channel and let pip
+skip it: `conda create -n mace-onegpu python=3.11 pytorch=2.5.1 pytorch-cuda=12.4 torchtriton=3.1.0 -c pytorch -c nvidia`,
+then the two `pip install` lines above.
+
 `pip install -e .` makes `mace_onegpu` importable from any directory, including from the Python interpreter embedded
 in LAMMPS. That is required: the model file (`.pt`) pickles `mace_onegpu.mliap_threepass.ThreePassMLIAP` and
 `mace_onegpu.fused_conv.FusedConvTP` by module path. (Without the install, put the repository root on `PYTHONPATH`;
