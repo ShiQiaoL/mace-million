@@ -70,6 +70,9 @@ def make_batch(model, atoms, device):
     except TypeError:
         config = mace_data.config_from_atoms(atoms, charges_key="charges")
     heads = getattr(model, "heads", None)
+    if heads and hasattr(config, "head"):
+        import os
+        config.head = os.environ.get("MACE3P_HEAD") or ("default" if "default" in heads else heads[0])
     try:
         ad = mace_data.AtomicData.from_config(config, z_table=z_table, cutoff=float(model.r_max), heads=heads)
     except TypeError:

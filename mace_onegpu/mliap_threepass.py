@@ -27,7 +27,7 @@ except ImportError:  # pragma: no cover
         def __init__(self):
             pass
 
-_RUNTIME = ("_fl", "_dev", "_cols", "_e0", "_loc", "_log", "_D1", "_pad", "_prof", "_t_graph", "_cache_graphs", "_topo", "_gx", "_use_graphs", "_fmax_abort", "_flag", "_fl_l1", "_fl_l2", "_t_end")
+_RUNTIME = ("_fl", "_dev", "_cols", "_e0", "_loc", "_log", "_D1", "_pad", "_prof", "_t_graph", "_cache_graphs", "_topo", "_gx", "_use_graphs", "_fmax_abort", "_flag", "_fl_l1", "_fl_l2", "_t_end", "_hi")
 
 
 class _G:
@@ -75,7 +75,7 @@ class _GraphExec:
         self.s_g1c = torch.zeros(C, D1, dtype=dt, device=dev)
         self.H1x = torch.zeros(nt_cap, D1, dtype=dt, device=dev)
         self.G1 = torch.zeros(nt_cap, D1, dtype=dt, device=dev)
-        self.heads = torch.zeros(C, dtype=torch.long, device=dev)
+        self.heads = torch.full((C,), owner._hi, dtype=torch.long, device=dev)
         self.ar = torch.arange(C, device=dev)
         self.padpat = torch.arange(e_cap, device=dev) % n_cap
         self.padvec = owner._pad.to(dt)
@@ -152,7 +152,7 @@ class _GraphExec:
 
 
 class ThreePassMLIAP(MLIAPUnified):
-    def __init__(self, model, chunk=16384, spline_grid=512, node_bucket=8192, e_align=65536):
+    def __init__(self, model, chunk=16384, spline_grid=512, node_bucket=8192, e_align=65536, rebuild_config=None):
         super().__init__()
         from ase.data import chemical_symbols
 
@@ -168,13 +168,37 @@ class ThreePassMLIAP(MLIAPUnified):
         self.e_align = int(e_align)
         self.dtype = next(model.parameters()).dtype
         self.step = 0
+        # rebuild recipe (class, config, state_dict) for models that keep e3nn TorchScript modules after conversion
+        self._rebuild = None
+        if rebuild_config is not None:
+            self._rebuild = (type(model), rebuild_config, {k: v.detach().cpu() for k, v in model.state_dict().items()})
 
     # the runtime objects (Triton kernels, tables, cuEq JIT state) are rebuilt after unpickling
     def __getstate__(self):
         d = self.__dict__.copy()
         for k in _RUNTIME:
             d.pop(k, None)
+        if d.get("_rebuild") is not None:       # MLIAPUnified is a plain class: the model is an ordinary attribute
+            d.pop("model", None)
         return d
+
+    def _rebuild_model(self):
+        """Build the model from its recipe with e3nn's fx code generation only (no TorchScript in the LAMMPS process)."""
+        import e3nn
+
+        from .fused_conv import repair_fused_blocks
+
+        cls, cfg, sd = self._rebuild
+        e3nn.set_optimization_defaults(jit_script_fx=False)
+        prev = torch.get_default_dtype()
+        torch.set_default_dtype(self.dtype)
+        try:
+            m = cls(**cfg)
+        finally:
+            torch.set_default_dtype(prev)
+        repair_fused_blocks(m)
+        m.load_state_dict(sd, strict=True)
+        return m.to(self.dtype)
 
     # ------------------------------------------------------------------ setup
     def _setup(self, elems):
@@ -184,12 +208,22 @@ class ThreePassMLIAP(MLIAPUnified):
         self._dev = dev
         if os.environ.get("MACE3P_CHUNK"):
             self.chunk = int(os.environ["MACE3P_CHUNK"])
+        if getattr(self, "_rebuild", None) is not None and getattr(self, "model", None) is None:
+            self.model = self._rebuild_model()
         self.model = self.model.to(dev).eval()
         for p in self.model.parameters():
             p.requires_grad_(False)
         cols = sorted(int(c) for c in torch.unique(elems).tolist())
         self._cols = cols
-        self._fl = fast_layers.FastLayers(self.model, cols, spline_grid=self.spline_grid)
+        from .receiver_chunk_mace import head_index
+        self._hi, hname = head_index(self.model)
+        try:
+            self._fl = fast_layers.FastLayers(self.model, cols, spline_grid=self.spline_grid)
+            kind = "fast"
+        except AssertionError as err:      # interaction blocks other than MPA-0's: exact generic layers, no spline/skip
+            self._fl = fast_layers.GenericLayers()
+            kind = f"generic ({err})"
+        print(f"ThreePassMLIAP: head {hname!r} (index {self._hi}), layers: {kind}", flush=True)
         self._flag = None
         # MACE3P_COMPILE=1: torch.compile (inductor) of the layer functions used inside the CUDA graphs of full chunks
         # (fixed shapes -> compiled once); the partial tail chunk keeps the eager functions (its shapes change every step)
@@ -206,8 +240,8 @@ class ThreePassMLIAP(MLIAPUnified):
         ncol = len(m.atomic_numbers)
         with torch.no_grad():
             eye = torch.eye(ncol, dtype=self.dtype, device=dev)
-            self._e0 = m.atomic_energies_fn(eye)[:, 0].double()             # [ncol]
-            h0 = torch.zeros(1, dtype=torch.long, device=dev)
+            self._e0 = m.atomic_energies_fn(eye)[:, self._hi].double()      # [ncol]
+            h0 = torch.full((1,), self._hi, dtype=torch.long, device=dev)
             z = torch.zeros(1, dtype=self.dtype, device=dev)
             self.shift = float(m.scale_shift(z, h0))
             self.scale = float(m.scale_shift(z + 1, h0)) - self.shift
@@ -382,7 +416,7 @@ class ThreePassMLIAP(MLIAPUnified):
         fl, m, scale = self._fl, self.model, self.scale
         eat = torch.zeros(nl, dtype=torch.float64, device=dev)
         PF = torch.zeros(P, 3, dtype=torch.float32, device=dev)     # fp32 while H1/G1 are alive; -> fp64 at the end
-        heads = torch.zeros(C, dtype=torch.long, device=dev)
+        heads = torch.full((C,), self._hi, dtype=torch.long, device=dev)
         # ---------------- pass A
         t = {}
         self._t_graph = 0.0

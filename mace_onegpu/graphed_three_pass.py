@@ -63,6 +63,19 @@ def make_capture_safe():
 
     B.EquivariantProductBasisBlock.forward = forward
 
+    # Multi-head readouts (e.g. MACE-MH-1): mace.modules.irreps_tools.mask_head writes `mask[idx, :, head] = 1`, an
+    # index_put with a host scalar that cannot be captured. The same 0/1 mask (same shape, channel order and dtype)
+    # built from a device-side comparison gives bit-identical results.
+    from mace.modules import irreps_tools as IT
+
+    def mask_head(x, head, num_heads: int):
+        sel = head.unsqueeze(-1) == torch.arange(num_heads, device=x.device)                 # [N, H]
+        mask = sel.unsqueeze(-1).expand(x.shape[0], num_heads, x.shape[1] // num_heads)      # [N, H, C/H]
+        return x * mask.reshape(x.shape).to(torch.get_default_dtype())
+
+    IT.mask_head = mask_head
+    B.mask_head = mask_head
+
 
 make_capture_safe()
 

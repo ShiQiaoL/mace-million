@@ -373,3 +373,19 @@ def _selftest():
 
 if __name__ == "__main__":
     _selftest()
+
+
+class GenericLayers:
+    """Same interface as FastLayers, built on the model's own modules (receiver_chunk_mace.layer1 / layer2_energy).
+    Used for interaction blocks that FastLayers does not specialise (e.g. the non-linear blocks of MACE-MH-1):
+    exact, but without the species-block skip connection and the tabulated radial weights."""
+
+    def layer1(self, model, g, node_attrs, vectors):
+        from . import receiver_chunk_mace as rc
+
+        return rc.layer1(model, g, node_attrs, vectors)
+
+    def layer2_energy(self, model, g, node_attrs, vectors, h1_local, heads):
+        from . import receiver_chunk_mace as rc
+
+        return rc.layer2_energy(model, g, node_attrs, vectors, h1_local, heads)

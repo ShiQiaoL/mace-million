@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.2 (2026-10-02)
+
+- Other MACE foundation models: readout-head selection for multi-head models (`MACE3P_HEAD`, e.g. `omat_pbe` for
+  MACE-MH-1; energies, E0s and scale/shift use the same head); exact generic layers (`fast_layers.GenericLayers`) for
+  interaction blocks that the specialised fast path does not cover (e.g. the non-linear blocks of MACE-MH-1).
+- Models that keep e3nn TorchScript modules after the cuEquivariance conversion are stored as a rebuild recipe
+  (class, config, state dict) and rebuilt inside LAMMPS with fx code generation only: unpickling TorchScript inside
+  LAMMPS crashes (std::regex template instances clash with liblammps' C++11-ABI copies).
+- CUDA-graph-safe replacement of MACE's multi-head `mask_head` (bit-identical output).
+- `scripts/compare_forces.py ref --head`.
+- `experimental/sevennet_lpass.py`: the receiver-chunked exact evaluation generalised to L message-passing layers,
+  demonstrated on SevenNet-0 (NequIP architecture, 5 layers).
+- `lammps/README.md`: results of LAMMPS's own ML-IAP tests on the patched and unpatched builds.
+
 ## 0.1.1 (2026-09-30)
 
 - `pyproject.toml`: `pip install -e .`.

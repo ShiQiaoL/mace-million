@@ -29,6 +29,19 @@ ap.add_argument("--chunk", type=int, default=16384)
 ap.add_argument("--spline-grid", type=int, default=512)
 a = ap.parse_args()
 model, dt = rc.build_model(a.model, "fp32_fused", "cuda")
-obj = ThreePassMLIAP(model.to("cpu"), chunk=a.chunk, spline_grid=a.spline_grid)
+# e3nn modules that the cuEquivariance conversion does not replace (e.g. the non-linear blocks of MACE-MH-1) keep
+# TorchScript code; unpickling those inside LAMMPS crashes (C++ ABI clash), so store a rebuild recipe instead
+n_script = sum(isinstance(x, torch.jit.ScriptModule) for x in model.modules())
+recipe = None
+if n_script:
+    from mace.modules.wrapper_ops import CuEquivarianceConfig
+    from mace.tools.scripts_utils import extract_config_mace_model
+
+    torch.set_default_dtype(torch.float32)
+    recipe = extract_config_mace_model(torch.load(a.model, map_location="cpu").float())
+    recipe["cueq_config"] = CuEquivarianceConfig(enabled=True, layout="ir_mul", group="O3_e3nn", optimize_all=True,
+                                                 conv_fusion=True)
+    print(f"{n_script} TorchScript modules remain after conversion: the file stores a rebuild recipe")
+obj = ThreePassMLIAP(model.to("cpu"), chunk=a.chunk, spline_grid=a.spline_grid, rebuild_config=recipe)
 torch.save(obj, a.out)
 print(f"saved {a.out}: chunk={a.chunk} spline_grid={a.spline_grid} dtype={dt} elements={len(obj.element_types)}")

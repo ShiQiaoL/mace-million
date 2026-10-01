@@ -20,4 +20,4 @@ mace_onegpu.fused_conv.FusedConvTP), so the repository root must be on PYTHONPAT
 in LAMMPS.
 """
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
