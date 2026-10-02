@@ -23,7 +23,32 @@ import torch
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "scripts"))
+sys.path.insert(0, os.path.join(HERE, ".."))
 from al_driver import carve_clusters  # noqa: E402  (the production carving code, unchanged)
+
+
+def periodic_forces(model_path, at, chunk=4096):
+    """Teacher forces on the periodic frame with the exact three-pass evaluation in fp64 (equal to the original model
+    to ~1e-12 eV/A, but with per-atom memory, so that frames large enough for 13-A clusters fit on one GPU)."""
+    from mace_onegpu import fast_layers
+    from mace_onegpu import receiver_chunk_mace as rc
+
+    m, dt = rc.build_model(model_path, "fp64_fused", "cuda")
+    zs = [int(z) for z in m.atomic_numbers]
+    species = sorted(set(int(z) for z in at.numbers))
+    fl = fast_layers.FastLayers(m, [zs.index(z) for z in species], spline_grid=0)
+    rc.layer1, rc.layer2_energy = fl.layer1, fl.layer2_energy
+    sysm = rc.System(torch.as_tensor(at.get_positions(), dtype=torch.float64, device="cuda"),
+                     np.diag(np.array(at.get_cell())), torch.as_tensor([zs.index(int(z)) for z in at.numbers],
+                                                                      dtype=torch.int16, device="cuda"),
+                     float(m.r_max), "cuda")
+    sysm.build_neighbors()
+    _, F, _, _ = rc.ReceiverChunkMACE(m, dt, chunk).compute(sysm, log=lambda *x, **k: None)
+    Fo = torch.empty_like(F)
+    Fo[sysm.perm] = F
+    del m, fl, sysm
+    torch.cuda.empty_cache()
+    return Fo.cpu().numpy()
 
 DEPTH_BINS = [(0.0, 1.0), (1.0, 2.0), (2.0, 3.0), (3.0, 4.0), (4.0, 6.0), (6.0, 8.0), (8.0, 99.0)]
 
@@ -92,22 +117,27 @@ def main():
     at = at.repeat(rep)
     at.wrap()
     N = len(at)
-    at.calc = teacher
-    Fp = at.get_forces().copy()
-    at.calc = None
-    print(f"{a.xyz}[{a.index}] x{rep}: N={N}, periodic teacher F_rms={np.sqrt((Fp ** 2).mean()):.4f} eV/A")
+    Fp = periodic_forces(a.model, at)
+    torch.set_default_dtype(torch.float64)
+    print(f"{a.xyz}[{a.index}] x{rep}: N={N}, periodic teacher (three-pass fp64) F_rms={np.sqrt((Fp ** 2).mean()):.4f} eV/A")
 
     rng = np.random.default_rng(11)
+    n_base = N // int(np.prod(rep))                       # at.repeat: index = image * n_base + base index
     centres = [("random", int(i)) for i in rng.choice(N, size=a.n_random, replace=False)]
-    dstu = None
+    stu, Fs, dstu = None, None, None
     if a.student:
         stu = MACECalculator(model_paths=a.student, device="cuda", default_dtype="float64")
         at.calc = stu
         Fs = at.get_forces().copy()
         at.calc = None
-        del stu
         dstu = np.linalg.norm(Fs - Fp, axis=1)
-        for i in np.argsort(-dstu)[: a.n_worst]:
+        seen = set()
+        for i in np.argsort(-dstu):                       # worst atoms, one per base-cell atom (no periodic images)
+            if len(seen) >= a.n_worst:
+                break
+            if int(i) % n_base in seen:
+                continue
+            seen.add(int(i) % n_base)
             centres.append(("worst", int(i)))
         print(f"  student vs teacher (periodic): rms {np.sqrt(((Fs - Fp) ** 2).mean()):.4f}, max |dF| {dstu.max():.3f} eV/A")
 
@@ -133,6 +163,17 @@ def main():
                    "student_dF_centre": None if dstu is None else float(dstu[c]),
                    "added_by_bonds": int((depth <= 0).sum()), "max_dF_added": float(err[depth <= 0].max()) if (depth <= 0).any() else None,
                    "depth_bins": []}
+            if stu is not None:
+                # training signal: what the cluster label asks the student to change (teacher - student on the cluster)
+                # against what the bulk asks (teacher - student in the periodic frame), at the centre atom
+                cl.calc = stu
+                Fsc = cl.get_forces()
+                cl.calc = None
+                sig_cl = Fc[k0] - Fsc[k0]
+                sig_bulk = Fp[c] - Fs[c]
+                row.update(signal_bulk=float(np.linalg.norm(sig_bulk)), signal_cluster=float(np.linalg.norm(sig_cl)),
+                           signal_error=float(np.linalg.norm(sig_cl - sig_bulk)),
+                           student_cluster_vs_periodic=float(np.linalg.norm(Fsc[k0] - Fs[c])))
             for lo, hi in DEPTH_BINS:
                 m = (depth > lo) & (depth <= hi)
                 row["depth_bins"].append({"lo": lo, "hi": hi, "n": int(m.sum()),
@@ -142,20 +183,33 @@ def main():
                 row["coordination"] = coordination(cl, a.coord)
             rows.append(row)
         last = [r for r in rows if r["centre"] == c]
-        print(f"  {kind:6s} centre {c:6d} (Z={at.numbers[c]:2d}): |dF_centre| by R " +
+        print(f"  {kind:6s} centre {c:6d} (Z={at.numbers[c]:2d}): teacher |dF_centre| by R " +
               " ".join(f"{r['R']:.0f}:{r['centre_dF'] * 1e3:.1f}" for r in last) + " meV/A" +
-              ("" if dstu is None else f"   student |dF| {dstu[c] * 1e3:.0f} meV/A"))
+              ("" if stu is None else "; signal error " + " ".join(f"{r['signal_error'] * 1e3:.1f}" for r in last)
+               + f" (bulk signal {last[0]['signal_bulk'] * 1e3:.0f})"))
 
     summ = []
     for R in a.radii:
         rr = [r for r in rows if r["R"] == R]
         ce = np.array([r["centre_dF"] for r in rr])
-        core = [b for r in rr for b in r["depth_bins"] if b["lo"] >= 4.0 and b["max_dF"] is not None]
-        summ.append({"R": R, "centre_dF_median": float(np.median(ce)), "centre_dF_max": float(ce.max()),
-                     "depth_ge4_max_dF": max((b["max_dF"] for b in core), default=None),
-                     "n_atoms_median": float(np.median([r["n_atoms"] for r in rr]))})
-        print(f"  R={R:4.1f}: centre |dF| median {summ[-1]['centre_dF_median'] * 1e3:.1f}, max {ce.max() * 1e3:.1f} meV/A; "
-              f"depth>=4 A max {summ[-1]['depth_ge4_max_dF']}; median {summ[-1]['n_atoms_median']:.0f} atoms")
+        prof = {}
+        for lo, hi in DEPTH_BINS:
+            e2 = [b["rms_dF"] ** 2 * b["n"] for r in rr for b in r["depth_bins"] if b["lo"] == lo and b["n"]]
+            nn = sum(b["n"] for r in rr for b in r["depth_bins"] if b["lo"] == lo)
+            prof[f"{lo:g}-{hi:g}"] = float(np.sqrt(sum(e2) / nn)) if nn else None
+        ent = {"R": R, "centre_dF_median": float(np.median(ce)), "centre_dF_max": float(ce.max()),
+               "depth_profile_rms": prof, "n_atoms_median": float(np.median([r["n_atoms"] for r in rr]))}
+        if stu is not None:
+            se = np.array([r["signal_error"] for r in rr])
+            sb = np.array([r["signal_bulk"] for r in rr])
+            ent.update(signal_error_median=float(np.median(se)), signal_error_max=float(se.max()),
+                       signal_bulk_median=float(np.median(sb)))
+        summ.append(ent)
+        print(f"  R={R:4.1f}: teacher centre |dF| median {ent['centre_dF_median'] * 1e3:.1f}, max {ce.max() * 1e3:.1f} meV/A"
+              + ("" if stu is None else f"; signal error median {ent['signal_error_median'] * 1e3:.1f}, max "
+                 f"{ent['signal_error_max'] * 1e3:.1f} (bulk signal median {ent['signal_bulk_median'] * 1e3:.0f})")
+              + f"; median {ent['n_atoms_median']:.0f} atoms; rms by depth "
+              + " ".join(f"{k}:{(v or 0) * 1e3:.0f}" for k, v in prof.items()))
     res = {"model": os.path.basename(a.model), "student": a.student and os.path.basename(a.student),
            "xyz": os.path.basename(a.xyz), "index": a.index, "rep": rep, "N": N,
            "periodic_F_rms": float(np.sqrt((Fp ** 2).mean())), "rows": rows, "summary": summ, "wall_s": time.time() - t0}
