@@ -170,7 +170,7 @@ recipe and rebuilt inside LAMMPS without TorchScript, which cannot be deserialis
 | MACE-MATPES-r2SCAN-0 | 4.2e-13 | 1.7e-5 | 1.97e5, 31 |
 | MACE-MATPES-PBE-0 | 4.0e-13 | 1.6e-5 | 1.97e5, 31 |
 | MACE-MH-1 (OMat24 head) | 4.4e-13 | 2.2e-5 | 1.5e4, 52 (chunk 4096) |
-| SevenNet-0 (5 layers) | 4.4e-13 | 4.7e-6 | 1.3e4, 39 |
+| SevenNet-0 (5 layers) | 4.4e-13 | 4.7e-6 | 1.3e4, 39 (e3nn); 8.5e4, 23 (cuEquivariance) |
 
 **SevenNet (NequIP-type, L layers).** `mace_onegpu/lpass_sevennet.py` generalises the three passes to L layers
 (L forward passes with one ghost exchange each, L recomputing backward passes with one reverse exchange each). The
@@ -193,8 +193,8 @@ python scripts/make_lpass_sevennet_model.py 7net-0 --out 7net-0.lpass_cueq.pt --
 cuEquivariance prepares its kernels per tensor shape, and inside LAMMPS the pair count changes every step, so the
 chunk tensors are padded to shapes that only grow (`MACE3P_SEVENN_PAD`, on by default with `--cueq`; buckets
 `MACE3P_NODE_BUCKET`=8192 nodes and `MACE3P_E_ALIGN`=65536 edges). The result is unchanged (forces within 4.5e-6 eV/A
-of the fp64 reference, NVE drift 0.06 meV/atom over 5 ps); SevenNet-0 then runs 983,040 water atoms at 8.4e4
-atom-steps/s with a 23-GB peak (e3nn backend: 1.3e4, 39 GB). SevenNet's own ML-IAP interface with cuEquivariance
+of the fp64 reference, NVE drift 0.06 meV/atom over 5 ps); SevenNet-0 then runs at 8.5-9.4e4 atom-steps/s from 12,288
+to 983,040 water atoms (23-GB peak at 983,040; e3nn backend: 1.3e4, 39 GB). SevenNet's own ML-IAP interface with cuEquivariance
 reaches 5.5-9.5e4 atom-steps/s and at most 98,304 atoms on the H200. None of the kernels of the MACE fast path were
 ported to the SevenNet path.
 
