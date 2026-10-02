@@ -124,13 +124,14 @@ class Evaluator:
         def acc(F, g, gv):
             self._acc0(F, g, gv)
             n = g.nE
-            S.add_(gv[:n].to(F64).T @ g.vectors[:n].to(F64))     # S_ab = sum_e dE/dv_a v_b
+            # S_ab = sum_e dE/dv_a v_b.  detach: in fp64 the evaluator's vectors.to(dt).requires_grad_() is in place
+            S.add_(gv[:n].detach().to(F64).T @ g.vectors[:n].detach().to(F64))
 
         self.ev._accum_forces = acc
         E, F, _, _ = self.ev.compute(sysm, log=lambda *a, **k: None)
         Fo = torch.empty_like(F)
-        Fo[sysm.perm] = F
-        return float(E), Fo.cpu().numpy(), S.cpu().numpy()
+        Fo[sysm.perm] = F.detach()
+        return float(E), Fo.cpu().numpy(), S.detach().cpu().numpy()
 
 
 def errors(a, b, N, V):
