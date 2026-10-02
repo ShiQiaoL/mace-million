@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- SevenNet: capacity of the original evaluation measured with SevenNet's cuEquivariance backend as well
+  (98,304 water atoms in LAMMPS; e3nn backend 21,504); the chunked evaluation with cuEquivariance is 5.9x faster
+  than with e3nn standalone (0.135 s for 12,288 atoms) but not yet inside LAMMPS; `experimental/sevennet_shape_variation.py`.
 - `scripts/al_driver.py --carve-radius` defaults to 13 A (was 7 A): cluster labels at 7 A deviate from the bulk
   correction by ~50% for water and ~3x for SiO2; at 13 A by ~1% (validate_clusters.py). In the 192,000-atom water
   test the two radii gave the same retrained error (19.8 / 19.9 meV/A); a fixed-student control shows 60% of the
