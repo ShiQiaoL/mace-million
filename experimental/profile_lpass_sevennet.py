@@ -22,11 +22,13 @@ def main():
     ap.add_argument("--base", required=True)
     ap.add_argument("--rep", nargs=3, type=int, default=[8, 8, 4])
     ap.add_argument("--chunk", type=int, default=8192)
+    ap.add_argument("--cueq", action="store_true", help="SevenNet's cuEquivariance backend")
+    ap.add_argument("--rows", type=int, default=22)
     a = ap.parse_args()
     from ase.io import read
 
     dev, dt = "cuda", torch.float32
-    model, cfg = load_sevennet(a.model, dt, dev)
+    model, cfg = load_sevennet(a.model, dt, dev, cueq=a.cueq)
     ev = LPassSevenNet(model, cfg, dt, a.chunk)
     big = read(a.base).repeat(a.rep)
     tm = model.type_map
@@ -50,8 +52,15 @@ def main():
         return d["x"]
 
     SevenNetLayers.layer = layer
-    ev.compute(sysm, types_s, log=lambda *x: None)                       # warm-up
+    import time
+
+    for _ in range(2):                                                   # warm-up (and kernel planning)
+        ev.compute(sysm, types_s, log=lambda *x: None)
     torch.cuda.synchronize()
+    t0 = time.perf_counter()
+    ev.compute(sysm, types_s, log=lambda *x: None)
+    torch.cuda.synchronize()
+    print(f"cueq={a.cueq}  N={sysm.N:,}  one force evaluation (warm): {time.perf_counter() - t0:.3f} s")
     with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA]) as prof:
         ev.compute(sysm, types_s, log=print)
         torch.cuda.synchronize()
@@ -64,7 +73,8 @@ def main():
     print(f"N={sysm.N:,}  chunk={a.chunk}  module ranges (GPU time incl. backward via autograd attribution is NOT included):")
     for k, v in sorted(tot.items(), key=lambda kv: -kv[1]):
         print(f"  {k:32s} {v / 1e6:8.3f} s  {100 * v / s:5.1f}%")
-    print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=22))
+    print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=a.rows))
+    print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=12))
 
 
 if __name__ == "__main__":
