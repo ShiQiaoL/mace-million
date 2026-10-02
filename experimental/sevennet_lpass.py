@@ -26,113 +26,10 @@ import numpy as np
 import torch
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-from mace_onegpu.receiver_chunk_mace import System, LocalGraph, _sync, _peak  # noqa: E402
+from mace_onegpu.receiver_chunk_mace import System, _sync, _peak  # noqa: E402
+from mace_onegpu.lpass_sevennet import LPassSevenNet, load_sevennet  # noqa: E402
 
 GB = 1e9
-
-
-def load_sevennet(name, dtype, device):
-    import sevenn.util as su
-
-    # e3nn's code-generated tensor products fix their dtype at construction: build the model under the target default
-    # dtype. sevenn's patch for old checkpoints compares float32 tables with the new ones; let that comparison cast.
-    prev, allclose = torch.get_default_dtype(), torch.allclose
-    torch.set_default_dtype(dtype)
-    torch.allclose = lambda x, y, *aa, **kw: allclose(x.to(y.dtype), y, *aa, **kw)
-    try:
-        model, cfg = su.model_from_checkpoint(su.pretrained_name_to_path(name) if not os.path.isfile(name) else name)
-    finally:
-        torch.allclose = allclose
-        torch.set_default_dtype(prev)
-    model = model.to(device=device, dtype=dtype).eval()
-    # some sevenn/e3nn modules keep float tensors as plain attributes (not parameters/buffers): cast them as well
-    for mod in model.modules():
-        for name, val in list(vars(mod).items()):
-            if isinstance(val, torch.Tensor) and torch.is_floating_point(val) and val.dtype != dtype:
-                setattr(mod, name, val.to(device=device, dtype=dtype))
-    for p in model.parameters():
-        p.requires_grad_(False)
-    return model, cfg
-
-
-class LPassSevenNet:
-    def __init__(self, model, cfg, dtype, chunk):
-        self.m, self.dt, self.chunk = model, dtype, int(chunk)
-        mods = model._modules
-        self.L = int(cfg["num_convolution_layer"])
-        self.r_max = float(cfg["cutoff"])
-        self.edge_embedding = mods["edge_embedding"]
-        self.embed = mods["onehot_to_feature_x"]
-        self.layers = [[mods[n] for n in mods if n.startswith(f"{k}_")] for k in range(self.L)]
-        self.readout = [mods["reduce_input_to_hidden"], mods["reduce_hidden_to_energy"], mods["rescale_atomic_energy"]]
-        self.n_types = int(cfg.get("_number_of_species", len(model.type_map)))
-
-    def _onehot(self, t):
-        return torch.nn.functional.one_hot(t.long(), self.n_types).to(self.dt)
-
-    def _graph(self, g, X, types, vectors):
-        # SevenNet: edge_index[0] = receiver, [1] = sender, edge_vec = r_sender - r_receiver (= -LocalGraph.vectors)
-        d = {"x": X[g.nodes], "node_attr": self._onehot(types[g.nodes]), "atom_type": types[g.nodes].long(),
-             "edge_index": torch.stack([g.edge_index[1], g.edge_index[0]]), "edge_vec": -vectors}
-        return self.edge_embedding(d)
-
-    def _layer(self, k, d):
-        for mod in self.layers[k]:
-            d = mod(d)
-        return d["x"]
-
-    def compute(self, sysm, types, log=print):
-        N, dev, dt = sysm.N, sysm.device, self.dt
-        loc = torch.full((N,), -1, dtype=torch.int32, device=dev)
-        F = torch.zeros(N, 3, dtype=torch.float64, device=dev)
-        t0 = time.perf_counter()
-        with torch.no_grad():
-            X = [self.embed({"x": self._onehot(types), "node_attr": self._onehot(types)})["x"]]
-            for k in range(self.L):                                        # forward passes
-                Xk = None
-                for a in range(0, N, self.chunk):
-                    b = min(a + self.chunk, N)
-                    g = LocalGraph(sysm, a, b, loc)
-                    xk = self._layer(k, self._graph(g, X[k], types, g.vectors.to(dt)))[: g.nC]
-                    if Xk is None:
-                        Xk = torch.empty(N, xk.shape[1], dtype=dt, device=dev)
-                    Xk[a:b] = xk
-                    del g, xk
-                X.append(Xk)
-        t_fwd = time.perf_counter() - t0
-        # readout and G_L
-        XL = X[-1].clone().requires_grad_(True)
-        d = {"x": XL, "atom_type": types.long()}
-        for mod in self.readout:
-            d = mod(d)
-        e_at = d["atomic_energy"].reshape(-1)
-        E = float(e_at.double().sum())
-        (G,) = torch.autograd.grad(e_at.sum(), [XL])
-        del XL, d, e_at
-        t0 = time.perf_counter()
-        for k in range(self.L - 1, -1, -1):                                 # backward passes (recompute)
-            Gprev = torch.zeros_like(X[k]) if k > 0 else None
-            for a in range(0, N, self.chunk):
-                b = min(a + self.chunk, N)
-                g = LocalGraph(sysm, a, b, loc)
-                vec = g.vectors.to(dt).requires_grad_(True)
-                xin = X[k].detach().clone().requires_grad_(k > 0)
-                xk = self._layer(k, self._graph(g, xin, types, vec))[: g.nC]
-                loss = (G[a:b] * xk).sum()
-                if k > 0:
-                    gv, gx = torch.autograd.grad(loss, [vec, xin])
-                    Gprev += gx                                              # gradient w.r.t. X_{k-1} of all nodes
-                else:
-                    (gv,) = torch.autograd.grad(loss, [vec])
-                # vec = r_recv - r_send:  F_recv -= dE/dvec,  F_send += dE/dvec
-                F.index_add_(0, g.recv_g, -gv.double())
-                F.index_add_(0, g.send_g, gv.double())
-                del g, vec, xin, xk, loss, gv
-            G = Gprev
-        t_bwd = time.perf_counter() - t0
-        resident = sum(x.numel() * x.element_size() for x in X)
-        log(f"  L={self.L} forward {t_fwd:.1f}s backward {t_bwd:.1f}s  resident X_0..X_L {resident / N:.0f} B/atom")
-        return E, F, resident
 
 
 def reference(model, atoms, cutoff, device):
@@ -187,10 +84,21 @@ def main():
     ap.add_argument("--check", action="store_true", help="compare every atom with the original model on the base cell")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--stock", action="store_true", help="also run the original model on the full replica (memory)")
+    ap.add_argument("--write-ref", default=None, help="write the fp64 reference of the original model for --data")
+    ap.add_argument("--data", default=None, help="LAMMPS data file (types 1 = O, 2 = H) for --write-ref")
     a = ap.parse_args()
     from ase.io import read
 
     dev = a.device
+    if a.write_ref:                       # reference forces for a LAMMPS data file (compare_forces.py format)
+        dt = getattr(torch, a.dtype)
+        model, cfg = load_sevennet(a.model, dt, dev)
+        torch.set_default_dtype(dt)
+        at = read(a.data, format="lammps-data", atom_style="atomic", Z_of_type={1: 8, 2: 1}, units="metal")
+        E, F = reference(model, at, float(cfg["cutoff"]), dev)
+        np.savez(a.write_ref, energy=E, forces=F.cpu().numpy(), positions=at.get_positions(), numbers=at.get_atomic_numbers())
+        print(f"reference ({a.dtype}): N={len(at)} E={E:.6f} eV  Fmax={float(F.abs().max()):.4f} eV/A -> {a.write_ref}")
+        return
     dt = getattr(torch, a.dtype)
     model, cfg = load_sevennet(a.model, dt, dev)     # load under the float32 default (sevenn's checkpoint patching)
     torch.set_default_dtype(dt)

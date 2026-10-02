@@ -1,0 +1,22 @@
+job 642635.hopper-m-02 on hopper-23 started Fri Oct  2 11:41:06 AM +08 2026  PYTHONPATH=<SEVENN_ENV>/lib/python3.11/site-packages:<REPO>
+== throughput (30 steps)
+  [water64_5x5x4_N19200] rc=0  Loop time of 42.208 on 1 procs for 30 steps with 19200 atoms
+  [water64_10x10x10_N192000] rc=0  Loop time of 424.52 on 1 procs for 30 steps with 192000 atoms
+  [water64_20x16x16_N983040] rc=0  Loop time of 2197.44 on 1 procs for 30 steps with 983040 atoms
+job finished Fri Oct  2 12:27:37 PM +08 2026
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			Resource Usage on 2026-10-02 12:27:38.298044:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	JobId: 642635.hopper-m-02
+	Project: CFP04-CF-019
+	Exit Status: 0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	NCPUs: Requested(12), Used(12)
+	CPU Time Used: 00:46:06
+	Memory: Requested(225gb), Used(5209288kb)
+	Vmem Used: 91367848kb
+	Walltime: Requested(02:00:00), Used(00:46:38)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	Execution Nodes Used: (hopper-23:ngpus=1:ncpus=12:mem=235929600kb)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	No GPU-related information available for this job.

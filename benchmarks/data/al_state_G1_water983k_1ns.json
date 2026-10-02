@@ -1,8 +1,8 @@
 {
  "cycle": 10,
- "student": "/home/svu/xqliu/scratch/mace-water-memtest/al_runs/G1_water983k_1ns/student_c0.model",
- "train": "/home/svu/xqliu/scratch/mace-water-memtest/al_runs/G1_water983k_1ns/train_c0.extxyz",
- "start": "/home/svu/xqliu/scratch/mace-water-memtest/al_runs/G1_water983k_1ns/cycle009/segment_end.restart",
+ "student": "<WORK>/al_runs/G1_water983k_1ns/student_c0.model",
+ "train": "<WORK>/al_runs/G1_water983k_1ns/train_c0.extxyz",
+ "start": "<WORK>/al_runs/G1_water983k_1ns/cycle009/segment_end.restart",
  "restart": 1,
  "history": [
   {

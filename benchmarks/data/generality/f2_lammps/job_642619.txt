@@ -1,0 +1,26 @@
+job 642619.hopper-m-02 on hopper-23 started Fri Oct  2 11:17:22 AM +08 2026
+SevenNet 7net-0: L=5 r_max=5.0 dtype=float32 N=15,360 edges/atom=52.2 chunk=8192
+stock SevenNet on N=15,360: E=-74496.515625  t=4.83s  peak=87.21 GB (5677.8 kB/atom)  max|F_stock - F_Lpass|=1.382e-06
+SevenNet 7net-0: L=5 r_max=5.0 dtype=float32 N=18,432 edges/atom=52.2 chunk=8192
+stock SevenNet on N=18,432: E=-89395.820312  t=4.42s  peak=104.63 GB (5676.6 kB/atom)  max|F_stock - F_Lpass|=1.564e-06
+SevenNet 7net-0: L=5 r_max=5.0 dtype=float32 N=21,504 edges/atom=52.2 chunk=8192
+stock SevenNet on N=21,504: E=-104295.125000  t=4.37s  peak=122.05 GB (5675.9 kB/atom)  max|F_stock - F_Lpass|=1.779e-06
+SevenNet 7net-0: L=5 r_max=5.0 dtype=float32 N=24,576 edges/atom=52.2 chunk=8192
+stock SevenNet on N=24,576: OUT OF MEMORY
+job finished Fri Oct  2 11:18:54 AM +08 2026
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			Resource Usage on 2026-10-02 11:18:55.503038:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	JobId: 642619.hopper-m-02
+	Project: CFP04-CF-019
+	Exit Status: 0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	NCPUs: Requested(12), Used(12)
+	CPU Time Used: 00:00:47
+	Memory: Requested(225gb), Used(3100720kb)
+	Vmem Used: 162389600kb
+	Walltime: Requested(00:40:00), Used(00:01:40)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	Execution Nodes Used: (hopper-23:ngpus=1:ncpus=12:mem=235929600kb)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	No GPU-related information available for this job.
