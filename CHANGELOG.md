@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `scripts/al_driver.py --carve-radius` defaults to 13 A (was 7 A): cluster labels at 7 A deviate from the bulk
+  correction by ~50% for water and ~3x for SiO2; at 13 A by ~1% (validate_clusters.py). In the 192,000-atom water
+  test the two radii gave the same retrained error (19.8 / 19.9 meV/A); a fixed-student control shows 60% of the
+  decrease from 23.8 meV/A comes from the relaxation of the box (benchmarks/data/al_state_V1_192k_*.json).
 - SevenNet: `load_sevennet(..., cueq=True)`, `LPassSevenNetMLIAP(..., cueq=True)` and
   `make_lpass_sevennet_model.py --cueq` select SevenNet's cuEquivariance backend (sevenn[cueq12]);
   `official_sevennet_mliap()` builds SevenNet's own ML-IAP wrapper without TorchScript, as the reference for speed and

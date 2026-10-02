@@ -81,17 +81,21 @@ b.text(0.03, 0.95, "lower and further right is better", transform=b.transAxes, f
 ps.title(b, "Speed is gained at almost no cost in accuracy")
 
 # ---- c
-for fn, lab, cc, m in (("al_state_V1_192k.json", "192,000 atoms, cutoff 4.5 Å", ps.C["student"], "o"),
-                       ("al_state_V4_npt300.json", "1,536 atoms, cutoff 4.0 Å", ps.C["student"], "^")):
+# 192,000 atoms: supervised with 7-A clusters (job64) and 13-A clusters (job118), and the fixed-student control
+# (job120: same student, start and seeds, checks only); 1,536 atoms: ten supervised segments (job77/78)
+for fn, lab, cc, m, ls_ in (("al_state_V1_192k.json", "192,000 atoms, retrained (7 Å clusters)", ps.C["student"], "o", "-"),
+                            ("al_state_V1_192k_R13.json", "192,000 atoms, retrained (13 Å clusters)", ps.C["student"], "s", "-"),
+                            ("al_state_V1_192k_fixed.json", "192,000 atoms, no retraining (control)", ps.C["line"], "o", "--"),
+                            ("al_state_V4_npt300.json", "1,536 atoms, cutoff 4.0 Å, retrained", ps.C["student"], "^", "-")):
     h = json.load(open(os.path.join(ps.DATA, fn)))["history"]
-    c.plot([x["cycle"] + 1 for x in h], [1e3 * x["worst"]["f_rmse"] for x in h], "-" + m, color=cc,
-           mfc="white" if m == "^" else cc, label=lab)
+    c.plot([x["cycle"] + 1 for x in h], [1e3 * x["worst"]["f_rmse"] for x in h], ls_, marker=m, color=cc,
+           mfc="white" if (m == "^" or ls_ == "--") else cc, ms=4 if m == "s" else None, label=lab)
 c.axhline(35, color=ps.C["ref"], lw=0.8, ls=(0, (4, 3)))
 c.text(10.4, 35.6, "retraining threshold", fontsize=ps.SECOND, color=ps.C["line"], ha="right", va="bottom")
 c.set_xlim(0.5, 10.5); c.set_ylim(15, 40); c.set_xticks(range(1, 11))
 c.set_xlabel("Supervised segment"); c.set_ylabel("Force error against teacher (meV Å$^{-1}$)")
 c.legend(loc="upper right", bbox_to_anchor=(1.0, 0.74), handlelength=1.8)
-ps.title(c, "Supervision lowers the student's error segment by segment")
+ps.title(c, "Retraining lowers the error beyond the relaxation of the box")
 
 # ---- d
 seg = np.array([p["seg"] for p in PROD])
