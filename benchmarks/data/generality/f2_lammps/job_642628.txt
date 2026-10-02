@@ -1,0 +1,28 @@
+job 642628.hopper-m-02 on hopper-23 started Fri Oct  2 11:24:04 AM +08 2026  PYTHONPATH=<SEVENN_ENV>/lib/python3.11/site-packages:<REPO>
+saved 7net-0.lpass.pt: <SEVENN_ENV>/lib/python3.11/site-packages/sevenn/pretrained_potentials/SevenNet_0__11Jul2024/checkpoint_sevennet_0.pth  elements=89  r_cut=5.0  chunk=8192  dtype=float32
+reference (float64): N=192 E=-931.206425 eV  Fmax=2.2009 eV/A -> ref192.npz
+== parity (192 atoms, LAMMPS fp32 vs SevenNet fp64)
+  rc=0  LPassSevenNetMLIAP: checkpoint_sevennet_0.pth L=5 r_max=5.0 dtype=float32 chunk=8192 | torch 2.5.1+cu124 (<SEVENN_ENV>/lib/python3.11/site-packages/torch) e3nn 0.6.0 sevenn 0.13.0
+RMS(dF) = 1.114e-06 eV/A   max|dF| = 4.673e-06 eV/A   rel = 1.309e-06
+worst atom index (0-based, sorted by id) = 19: Fa=[ 1.20955533 -1.7648094  -0.93952121] Fb=[ 1.20955474 -1.76481407 -0.93952125]
+PASS (tolerance: max|dF| <= 0.001 eV/A, rel <= None)
+== NVE, 1,536 atoms, 1 fs, 5 ps
+  rc=0  Loop time of 632.023 on 1 procs for 5000 steps with 1536 atoms
+  NVE: 51 thermo rows, steps 0-5000, TotEng -7390.12740 -> -7390.07000 eV, drift +0.0374 meV/atom, max dev 0.0945 meV/atom
+job finished Fri Oct  2 11:35:22 AM +08 2026
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			Resource Usage on 2026-10-02 11:35:23.551291:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	JobId: 642628.hopper-m-02
+	Project: CFP04-CF-019
+	Exit Status: 0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	NCPUs: Requested(12), Used(12)
+	CPU Time Used: 00:10:56
+	Memory: Requested(225gb), Used(2165684kb)
+	Vmem Used: 38056052kb
+	Walltime: Requested(02:00:00), Used(00:11:28)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	Execution Nodes Used: (hopper-23:ngpus=1:ncpus=12:mem=235929600kb)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	No GPU-related information available for this job.

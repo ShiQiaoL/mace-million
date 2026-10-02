@@ -151,6 +151,40 @@ runs: `OMP_NUM_THREADS=1`, `MKL_THREADING_LAYER=GNU`. Do not set
 Two further measures avoid int32 limits: the `H1`/`G1` ghost exchanges are split by feature columns so that every
 call stays below 2^31 elements, and the patched LAMMPS caps its pair-buffer headroom below 2^31.
 
+## Other foundation models and SevenNet
+
+**Other MACE models.** The same files run other two-layer MACE foundation models; tested on water (H200):
+MACE-MATPES-r2SCAN-0 and MACE-MATPES-PBE-0 (architecture of MACE-MPA-0, fast path) and MACE-MH-1 (non-linear
+interaction blocks; exact generic layers). Select the read-out head of multi-head models with `MACE3P_HEAD`, e.g.
+
+```bash
+MACE3P_HEAD=omat_pbe python scripts/make_threepass_model.py mace-mh-1.model --out mh1.pt
+MACE3P_HEAD=omat_pbe lmp -k on g 1 -sf kk -pk kokkos newton on neigh half -in ... -var model_file mh1.pt
+```
+
+Models that keep e3nn TorchScript modules after the cuEquivariance conversion (MACE-MH-1) are stored as a rebuild
+recipe and rebuilt inside LAMMPS without TorchScript, which cannot be deserialised in the LAMMPS process.
+
+| model | replica check, fp64 (eV/A) | LAMMPS vs fp64 (eV/A) | 983,040 water atoms (atom-steps/s, peak GB) |
+|---|---|---|---|
+| MACE-MATPES-r2SCAN-0 | 4.2e-13 | 1.7e-5 | 1.97e5, 31 |
+| MACE-MATPES-PBE-0 | 4.0e-13 | 1.6e-5 | 1.97e5, 31 |
+| MACE-MH-1 (OMat24 head) | 4.4e-13 | 2.2e-5 | 1.5e4, 52 (chunk 4096) |
+| SevenNet-0 (5 layers) | 4.4e-13 | 4.7e-6 | 1.3e4, 39 |
+
+**SevenNet (NequIP-type, L layers).** `mace_onegpu/lpass_sevennet.py` generalises the three passes to L layers
+(L forward passes with one ghost exchange each, L recomputing backward passes with one reverse exchange each). The
+original SevenNet-0 evaluation fits at most 21,504 water atoms on a 141-GB H200; the chunked evaluation runs 983,040
+atoms in LAMMPS with a 39-GB peak and 3.1 million atoms standalone. It uses the same LAMMPS build: because MACE 0.3.15
+requires e3nn 0.4.4 and SevenNet e3nn >= 0.5, the SevenNet environment is put first on `PYTHONPATH` (same Python
+minor version required):
+
+```bash
+SEVENN_ENV=/path/to/sevennet-env bash examples/sevennet_lammps.sh     # builds the model file, checks forces: PASS
+```
+
+The SevenNet path has none of the kernel optimisations of the MACE fast path (eager e3nn code).
+
 ## Students and on-the-fly supervision
 
 The teacher (MACE-MPA-0) is exact but slow. A small MACE student (for example 16x0e+16x1o, l=2, correlation 2,

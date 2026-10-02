@@ -32,6 +32,7 @@ NEEDS = {
     "fused_radial": ["torch", "triton"],
     "graphed_three_pass": ["torch", "mace"],
     "mliap_threepass": ["torch"],
+    "lpass_sevennet": ["torch", "sevenn"],
     "radial_3xtf32": ["torch"],
     "receiver_chunk_mace": ["torch", "numpy"],
     "spline_radial": ["torch"],

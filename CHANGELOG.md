@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.3 (2026-10-02)
+
+- SevenNet inside LAMMPS: `mace_onegpu/lpass_sevennet.py` (exact L-layer receiver-chunked evaluation; ML-IAP
+  wrapper `LPassSevenNetMLIAP` with one forward and one reverse ghost exchange per layer),
+  `scripts/make_lpass_sevennet_model.py`, `examples/sevennet_lammps.sh`. SevenNet-0 on water (H200): forces within
+  4.7e-6 eV/A of the fp64 reference, NVE drift 0.04 meV/atom over 5 ps (1,536 atoms), 983,040 atoms at 1.3e4
+  atom-steps/s with a 39-GB peak; the original evaluation fits at most 21,504 atoms.
+- `experimental/sevennet_lpass.py` now uses the package module and writes fp64 references (`--write-ref`).
+- README: other foundation models and SevenNet.
+
 ## 0.1.2 (2026-10-02)
 
 - Other MACE foundation models: readout-head selection for multi-head models (`MACE3P_HEAD`, e.g. `omat_pbe` for
