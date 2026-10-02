@@ -98,6 +98,35 @@ class SevenNetLayers:
             d = mod(d)
         return d["x"]
 
+    # Shape padding. cuEquivariance prepares its kernels per tensor shape (about 2 s per new shape for SevenNet-0);
+    # inside LAMMPS the number of pairs changes every step, so without padding every force call paid that cost
+    # (jobs 109/124). Node and edge counts are rounded up to fixed buckets: the extra nodes carry zero features and
+    # species 0, the extra edges connect the last extra node to itself with a vector longer than the cutoff, so the
+    # first n rows of the result are unchanged. Gradients flow through torch.cat to the unpadded inputs.
+    pad = False
+    node_bucket = 8192
+    e_align = 65536
+    n_cap = 0           # high-water marks: all chunks are padded to the largest size seen so far (rounded up), so that
+    e_cap = 0           # the shape changes only when a chunk grows beyond the previous maximum (rare), not every step
+
+    def layer_padded(self, k, x_nodes, types_nodes, edge_index_sevenn, edge_vec):
+        if not self.pad:
+            return self.layer(k, x_nodes, types_nodes, edge_index_sevenn, edge_vec)
+        n, E = x_nodes.shape[0], edge_vec.shape[0]
+        self.n_cap = max(self.n_cap, -(-(n + 1) // self.node_bucket) * self.node_bucket)
+        self.e_cap = max(self.e_cap, -(-E // self.e_align) * self.e_align)
+        n_p, E_p = self.n_cap, self.e_cap
+        x_p = torch.cat([x_nodes, x_nodes.new_zeros(n_p - n, x_nodes.shape[1])])
+        t_p = torch.cat([types_nodes, types_nodes.new_zeros(n_p - n)])
+        if E_p > E:
+            ei_p = torch.cat([edge_index_sevenn, edge_index_sevenn.new_full((2, E_p - E), n_p - 1)], 1)
+            vpad = edge_vec.new_zeros(E_p - E, 3)
+            vpad[:, 0] = self.r_max + 1.0
+            ev_p = torch.cat([edge_vec, vpad])
+        else:
+            ei_p, ev_p = edge_index_sevenn, edge_vec
+        return self.layer(k, x_p, t_p, ei_p, ev_p)
+
     def atomic_energy(self, xL, types):
         d = {"x": xL, "atom_type": types.long()}
         for mod in self.readout:
@@ -110,6 +139,9 @@ class LPassSevenNet(SevenNetLayers):
     def __init__(self, model, cfg, dtype, chunk):
         super().__init__(model, cfg, dtype)
         self.chunk = int(chunk)
+        self.pad = os.environ.get("MACE3P_SEVENN_PAD", "0") == "1"
+        self.node_bucket = int(os.environ.get("MACE3P_NODE_BUCKET", "8192"))
+        self.e_align = int(os.environ.get("MACE3P_E_ALIGN", "65536"))
 
     def compute(self, sysm, types, log=print):
         """Energy and forces (sorted order of sysm) for a receiver_chunk_mace.System with built neighbour list."""
@@ -132,7 +164,7 @@ class LPassSevenNet(SevenNetLayers):
                 for a in range(0, N, self.chunk):
                     b = min(a + self.chunk, N)
                     g, ei, ev = graph(a, b)
-                    xk = self.layer(k, X[k][g.nodes], types[g.nodes], ei, ev)[: g.nC]
+                    xk = self.layer_padded(k, X[k][g.nodes], types[g.nodes], ei, ev)[: g.nC]
                     if Xk is None:
                         Xk = torch.empty(N, xk.shape[1], dtype=dt, device=dev)
                     Xk[a:b] = xk
@@ -153,7 +185,7 @@ class LPassSevenNet(SevenNetLayers):
                 ev = ev.requires_grad_(True)                                 # ev = r_sender - r_receiver
                 xin = X[k][g.nodes].detach().clone().requires_grad_(k > 0)
                 with torch.enable_grad():
-                    xk = self.layer(k, xin, types[g.nodes], ei, ev)[: g.nC]
+                    xk = self.layer_padded(k, xin, types[g.nodes], ei, ev)[: g.nC]
                     loss = (G[a:b] * xk).sum()
                     if k > 0:
                         gv, gx = torch.autograd.grad(loss, [ev, xin])
@@ -215,6 +247,9 @@ class LPassSevenNetMLIAP(MLIAPUnified):
         self._cueq = getattr(self, "cueq", False) or os.environ.get("MACE3P_SEVENN_CUEQ", "0") == "1"
         model, cfg = load_sevennet(self.checkpoint, dt, self._dev, script=False, cueq=self._cueq)
         self._lay = SevenNetLayers(model, cfg, dt)
+        self._lay.pad = os.environ.get("MACE3P_SEVENN_PAD", "1" if self._cueq else "0") == "1"
+        self._lay.node_bucket = int(os.environ.get("MACE3P_NODE_BUCKET", "8192"))
+        self._lay.e_align = int(os.environ.get("MACE3P_E_ALIGN", "65536"))
         self._loc = None
         self._flag = None
         self._fmax_abort = float(os.environ.get("MACE3P_FMAX_ABORT", "100.0"))
@@ -224,7 +259,7 @@ class LPassSevenNetMLIAP(MLIAPUnified):
         import sevenn
 
         print(f"LPassSevenNetMLIAP: {os.path.basename(self.checkpoint)} L={self._lay.L} r_max={self._lay.r_max} "
-              f"dtype={self.dtype_name} chunk={self.chunk} cueq={self._cueq} | torch {torch.__version__} "
+              f"dtype={self.dtype_name} chunk={self.chunk} cueq={self._cueq} pad={self._lay.pad} | torch {torch.__version__} "
               f"({os.path.dirname(torch.__file__)}) e3nn {e3nn.__version__} sevenn {sevenn.__version__}", flush=True)
 
     def _topology(self, a, b, e0, e1, pi, pj):
@@ -284,7 +319,7 @@ class LPassSevenNetMLIAP(MLIAPUnified):
                     if (a, b) not in topo:
                         topo[(a, b)] = self._topology(a, b, e0, e1, pi, pj)
                     nodes, ei = topo[(a, b)]
-                    xk = lay.layer(k, X[k][nodes], elems[nodes], ei, rij[e0:e1].to(dt))[: b - a]
+                    xk = lay.layer_padded(k, X[k][nodes], elems[nodes], ei, rij[e0:e1].to(dt))[: b - a]
                     if Xk is None:
                         Xk = torch.zeros(nt, xk.shape[1], dtype=dt, device=dev)
                     Xk[a:b] = xk
@@ -316,7 +351,7 @@ class LPassSevenNetMLIAP(MLIAPUnified):
                 ev = rij[e0:e1].to(dt).requires_grad_(True)
                 xin = X[k][nodes].detach().requires_grad_(k > 0)
                 with torch.enable_grad():
-                    xk = lay.layer(k, xin, elems[nodes], ei, ev)[: b - a]
+                    xk = lay.layer_padded(k, xin, elems[nodes], ei, ev)[: b - a]
                     loss = (G[a:b] * xk).sum()
                     if k > 0:
                         gv, gx = torch.autograd.grad(loss, [ev, xin])

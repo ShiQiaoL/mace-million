@@ -183,7 +183,20 @@ minor version required):
 SEVENN_ENV=/path/to/sevennet-env bash examples/sevennet_lammps.sh     # builds the model file, checks forces: PASS
 ```
 
-The SevenNet path has none of the kernel optimisations of the MACE fast path (eager e3nn code).
+With SevenNet's cuEquivariance backend (`pip install sevenn[cueq12]` in the SevenNet environment, or
+cuEquivariance 0.9.1 in a venv overlay) build the model file with `--cueq`:
+
+```bash
+python scripts/make_lpass_sevennet_model.py 7net-0 --out 7net-0.lpass_cueq.pt --cueq
+```
+
+cuEquivariance prepares its kernels per tensor shape, and inside LAMMPS the pair count changes every step, so the
+chunk tensors are padded to shapes that only grow (`MACE3P_SEVENN_PAD`, on by default with `--cueq`; buckets
+`MACE3P_NODE_BUCKET`=8192 nodes and `MACE3P_E_ALIGN`=65536 edges). The result is unchanged (forces within 4.5e-6 eV/A
+of the fp64 reference, NVE drift 0.06 meV/atom over 5 ps); SevenNet-0 then runs 983,040 water atoms at 8.4e4
+atom-steps/s with a 23-GB peak (e3nn backend: 1.3e4, 39 GB). SevenNet's own ML-IAP interface with cuEquivariance
+reaches 5.5-9.5e4 atom-steps/s and at most 98,304 atoms on the H200. None of the kernels of the MACE fast path were
+ported to the SevenNet path.
 
 ## Students and on-the-fly supervision
 

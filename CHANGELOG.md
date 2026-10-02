@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- SevenNet + cuEquivariance inside LAMMPS: chunk tensors padded to high-water-mark shapes (`SevenNetLayers.layer_padded`,
+  `MACE3P_SEVENN_PAD`), because cuEquivariance prepares kernels per shape (~2 s per new shape) and LAMMPS changes the
+  pair count every step. 983,040 water atoms: 8.4e4 atom-steps/s, 23 GB (was 1.3e4 / 39 GB with e3nn; 0.5-1.0e4 with
+  cuEquivariance before padding); results unchanged (4.5e-6 eV/A vs fp64, NVE drift 0.06 meV/atom over 5 ps).
 - SevenNet: capacity of the original evaluation measured with SevenNet's cuEquivariance backend as well
   (98,304 water atoms in LAMMPS; e3nn backend 21,504); the chunked evaluation with cuEquivariance is 5.9x faster
   than with e3nn standalone (0.135 s for 12,288 atoms) but not yet inside LAMMPS; `experimental/sevennet_shape_variation.py`.
