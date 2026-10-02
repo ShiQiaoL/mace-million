@@ -174,7 +174,7 @@ recipe and rebuilt inside LAMMPS without TorchScript, which cannot be deserialis
 
 **SevenNet (NequIP-type, L layers).** `mace_onegpu/lpass_sevennet.py` generalises the three passes to L layers
 (L forward passes with one ghost exchange each, L recomputing backward passes with one reverse exchange each). The
-original SevenNet-0 evaluation fits at most 21,504 water atoms on a 141-GB H200; the chunked evaluation runs 983,040
+original SevenNet-0 evaluation fits at most 21,504 water atoms on a 141-GB H200 with the e3nn backend (98,304 with cuEquivariance); the chunked evaluation runs 983,040
 atoms in LAMMPS with a 39-GB peak and 3.1 million atoms standalone. It uses the same LAMMPS build: because MACE 0.3.15
 requires e3nn 0.4.4 and SevenNet e3nn >= 0.5, the SevenNet environment is put first on `PYTHONPATH` (same Python
 minor version required):
