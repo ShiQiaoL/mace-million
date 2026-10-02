@@ -106,16 +106,21 @@ class SevenNetLayers:
     pad = False
     node_bucket = 8192
     e_align = 65536
-    n_cap = 0           # high-water marks: all chunks are padded to the largest size seen so far (rounded up), so that
-    e_cap = 0           # the shape changes only when a chunk grows beyond the previous maximum (rare), not every step
+    caps = None         # per-chunk high-water marks {key: (n_cap, e_cap)}: a chunk is padded to the largest rounded
+                        # size it has had so far, so its shape changes only when it grows past that (rare), not every
+                        # step; chunks of different size keep different shapes (a handful of distinct kernel shapes)
 
-    def layer_padded(self, k, x_nodes, types_nodes, edge_index_sevenn, edge_vec):
+    def layer_padded(self, k, x_nodes, types_nodes, edge_index_sevenn, edge_vec, key=None):
         if not self.pad:
             return self.layer(k, x_nodes, types_nodes, edge_index_sevenn, edge_vec)
         n, E = x_nodes.shape[0], edge_vec.shape[0]
-        self.n_cap = max(self.n_cap, -(-(n + 1) // self.node_bucket) * self.node_bucket)
-        self.e_cap = max(self.e_cap, -(-E // self.e_align) * self.e_align)
-        n_p, E_p = self.n_cap, self.e_cap
+        n_p = -(-(n + 1) // self.node_bucket) * self.node_bucket
+        E_p = -(-E // self.e_align) * self.e_align
+        if self.caps is None:
+            self.caps = {}
+        c = self.caps.get(key, (0, 0))
+        n_p, E_p = max(n_p, c[0]), max(E_p, c[1])
+        self.caps[key] = (n_p, E_p)
         x_p = torch.cat([x_nodes, x_nodes.new_zeros(n_p - n, x_nodes.shape[1])])
         t_p = torch.cat([types_nodes, types_nodes.new_zeros(n_p - n)])
         if E_p > E:
@@ -164,7 +169,7 @@ class LPassSevenNet(SevenNetLayers):
                 for a in range(0, N, self.chunk):
                     b = min(a + self.chunk, N)
                     g, ei, ev = graph(a, b)
-                    xk = self.layer_padded(k, X[k][g.nodes], types[g.nodes], ei, ev)[: g.nC]
+                    xk = self.layer_padded(k, X[k][g.nodes], types[g.nodes], ei, ev, key=(a, b))[: g.nC]
                     if Xk is None:
                         Xk = torch.empty(N, xk.shape[1], dtype=dt, device=dev)
                     Xk[a:b] = xk
@@ -185,7 +190,7 @@ class LPassSevenNet(SevenNetLayers):
                 ev = ev.requires_grad_(True)                                 # ev = r_sender - r_receiver
                 xin = X[k][g.nodes].detach().clone().requires_grad_(k > 0)
                 with torch.enable_grad():
-                    xk = self.layer_padded(k, xin, types[g.nodes], ei, ev)[: g.nC]
+                    xk = self.layer_padded(k, xin, types[g.nodes], ei, ev, key=(a, b))[: g.nC]
                     loss = (G[a:b] * xk).sum()
                     if k > 0:
                         gv, gx = torch.autograd.grad(loss, [ev, xin])
@@ -319,7 +324,7 @@ class LPassSevenNetMLIAP(MLIAPUnified):
                     if (a, b) not in topo:
                         topo[(a, b)] = self._topology(a, b, e0, e1, pi, pj)
                     nodes, ei = topo[(a, b)]
-                    xk = lay.layer_padded(k, X[k][nodes], elems[nodes], ei, rij[e0:e1].to(dt))[: b - a]
+                    xk = lay.layer_padded(k, X[k][nodes], elems[nodes], ei, rij[e0:e1].to(dt), key=(a, b))[: b - a]
                     if Xk is None:
                         Xk = torch.zeros(nt, xk.shape[1], dtype=dt, device=dev)
                     Xk[a:b] = xk
@@ -351,7 +356,7 @@ class LPassSevenNetMLIAP(MLIAPUnified):
                 ev = rij[e0:e1].to(dt).requires_grad_(True)
                 xin = X[k][nodes].detach().requires_grad_(k > 0)
                 with torch.enable_grad():
-                    xk = lay.layer_padded(k, xin, elems[nodes], ei, ev)[: b - a]
+                    xk = lay.layer_padded(k, xin, elems[nodes], ei, ev, key=(a, b))[: b - a]
                     loss = (G[a:b] * xk).sum()
                     if k > 0:
                         gv, gx = torch.autograd.grad(loss, [ev, xin])
