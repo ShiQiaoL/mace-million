@@ -107,7 +107,7 @@ def main():
     ax.text(X0 + 3.0, yc0 + 0.35, "edge messages · node features · autograd graph  (freed after each chunk; padded to fixed shapes for CUDA graphs)",
             fontsize=6, color=GREEN["tc"], va="center")
     yB = yb + hb + 0.62
-    badge(ax, 3.2, yB, "memory 1.55 MB → 4.6 kB per atom (×340 less)")
+    badge(ax, 3.2, yB, "memory per added atom 1.55 MB → 4.6 kB (×340)")
     badge(ax, 9.0, yB, "28.6 M atoms on one H200 (exact MACE-MPA-0)")
     badge(ax, 14.7, yB, "kernels ×2.5: species-block skip, tabulated radial,\nCUDA graphs, torch.compile", 6.0)
 

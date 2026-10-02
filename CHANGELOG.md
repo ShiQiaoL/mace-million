@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- SevenNet: `load_sevennet(..., cueq=True)`, `LPassSevenNetMLIAP(..., cueq=True)` and
+  `make_lpass_sevennet_model.py --cueq` select SevenNet's cuEquivariance backend (sevenn[cueq12]);
+  `official_sevennet_mliap()` builds SevenNet's own ML-IAP wrapper without TorchScript, as the reference for speed and
+  memory in the same LAMMPS build (forces within 4.3e-6 eV/A of the fp64 reference; out of memory at 24,000 water atoms
+  on a 141-GB H200).
+- `experimental/validate_numerics.py`: error decomposition (reordering, radial tables, fp32 rounding, production path),
+  convergence of the tabulated radial weights with the number of knots, finite differences of energy vs forces and of
+  strain vs virial.
+- `experimental/validate_clusters.py`: teacher forces in carved vacuum clusters (the production carving code) vs the
+  periodic frame, as a function of cluster radius and depth below the cut surface.
+- `experimental/bench_lpass_sevennet.py`, `experimental/profile_lpass_sevennet.py`.
+- Figures: the 340-fold reduction is stated per added atom.
+
 ## 0.1.3 (2026-10-02)
 
 - SevenNet inside LAMMPS: `mace_onegpu/lpass_sevennet.py` (exact L-layer receiver-chunked evaluation; ML-IAP

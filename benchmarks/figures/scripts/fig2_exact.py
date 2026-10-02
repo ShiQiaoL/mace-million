@@ -58,7 +58,7 @@ a.text(9.5e6, 190, "fp64", color=ps.C["exact"], fontsize=ps.SECOND, ha="right", 
 a.text(9.5e6, 9.5, "MACE student", color=ps.C["student"], fontsize=ps.SECOND, ha="left", va="center")
 a.text(2.0e5, 0.62, "NEP89", color=ps.C["nep"], fontsize=ps.SECOND, ha="left", va="center")
 a.text(5.0e7, 40, "28.6 M atoms\n(fp32)", fontsize=ps.SECOND, color=ps.C["exact"], ha="right", va="top")
-ps.title(a, "Three-pass evaluation lowers memory per atom 340-fold")
+ps.title(a, "Three-pass evaluation lowers memory per added atom 340-fold")
 
 # ---- b  (points on a log axis, no bars)
 lab = ["fp64 three-pass vs original\n(all 1.5 × 10$^7$ atoms)", "fp32 three-pass vs original", "original model,\nfp32 vs fp64",

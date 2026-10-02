@@ -36,9 +36,10 @@ except ImportError:  # pragma: no cover
 
 
 # ----------------------------------------------------------------------------- model
-def load_sevennet(name, dtype, device, script=True):
+def load_sevennet(name, dtype, device, script=True, cueq=False):
     """SevenNet model in `dtype` on `device`, built from a checkpoint path or a pretrained name (e.g. "7net-0").
-    script=False builds e3nn's generated code as fx modules only (no TorchScript), as needed inside LAMMPS."""
+    script=False builds e3nn's generated code as fx modules only (no TorchScript), as needed inside LAMMPS.
+    cueq=True uses SevenNet's cuEquivariance backend (sevenn[cueq12]); the function of the model is unchanged."""
     import e3nn
     import sevenn.util as su
 
@@ -51,7 +52,7 @@ def load_sevennet(name, dtype, device, script=True):
     torch.set_default_dtype(dtype)
     torch.allclose = lambda x, y, *aa, **kw: allclose(x.to(y.dtype), y, *aa, **kw)
     try:
-        model, cfg = su.model_from_checkpoint(path)
+        model, cfg = su.model_from_checkpoint(path, enable_cueq=cueq) if cueq else su.model_from_checkpoint(path)
     finally:
         torch.allclose = allclose
         torch.set_default_dtype(prev)
@@ -79,6 +80,8 @@ class SevenNetLayers:
         self.layers = [[mods[n] for n in mods if n.startswith(f"{k}_")] for k in range(self.L)]
         self.readout = [mods["reduce_input_to_hidden"], mods["reduce_hidden_to_energy"], mods["rescale_atomic_energy"]]
         self.n_types = int(cfg.get("_number_of_species", len(model.type_map)))
+        if os.environ.get("MACE3P_COMPILE", "0") == "1":      # inductor fusion of e3nn's generated tensor-product code
+            self.layer = torch.compile(self.layer, dynamic=True, mode=os.environ.get("MACE3P_COMPILE_MODE") or None)
 
     def onehot(self, t):
         return torch.nn.functional.one_hot(t.long(), self.n_types).to(self.dt)
@@ -177,7 +180,7 @@ class LPassSevenNetMLIAP(MLIAPUnified):
     The file stores only the checkpoint path and the settings; the model is built inside LAMMPS on the first call
     (fx code generation only: TorchScript cannot be deserialised in the LAMMPS process, see mliap_threepass.py)."""
 
-    def __init__(self, checkpoint, chunk=8192, dtype="float32"):
+    def __init__(self, checkpoint, chunk=8192, dtype="float32", cueq=False):
         super().__init__()
         from ase.data import chemical_symbols
 
@@ -195,6 +198,7 @@ class LPassSevenNetMLIAP(MLIAPUnified):
         self.nparams = 1
         self.chunk = int(chunk)
         self.dtype_name = str(dtype)
+        self.cueq = bool(cueq)
         self.step = 0
 
     def __getstate__(self):
@@ -208,7 +212,8 @@ class LPassSevenNetMLIAP(MLIAPUnified):
         if os.environ.get("MACE3P_CHUNK"):
             self.chunk = int(os.environ["MACE3P_CHUNK"])
         dt = getattr(torch, self.dtype_name)
-        model, cfg = load_sevennet(self.checkpoint, dt, self._dev, script=False)
+        self._cueq = getattr(self, "cueq", False) or os.environ.get("MACE3P_SEVENN_CUEQ", "0") == "1"
+        model, cfg = load_sevennet(self.checkpoint, dt, self._dev, script=False, cueq=self._cueq)
         self._lay = SevenNetLayers(model, cfg, dt)
         self._loc = None
         self._flag = None
@@ -219,8 +224,8 @@ class LPassSevenNetMLIAP(MLIAPUnified):
         import sevenn
 
         print(f"LPassSevenNetMLIAP: {os.path.basename(self.checkpoint)} L={self._lay.L} r_max={self._lay.r_max} "
-              f"dtype={self.dtype_name} chunk={self.chunk} | torch {torch.__version__} ({os.path.dirname(torch.__file__)}) "
-              f"e3nn {e3nn.__version__} sevenn {sevenn.__version__}", flush=True)
+              f"dtype={self.dtype_name} chunk={self.chunk} cueq={self._cueq} | torch {torch.__version__} "
+              f"({os.path.dirname(torch.__file__)}) e3nn {e3nn.__version__} sevenn {sevenn.__version__}", flush=True)
 
     def _topology(self, a, b, e0, e1, pi, pj):
         """Receiver chunk [a, b): nodes (receivers first, then outside senders incl. ghosts) and the SevenNet edge
@@ -349,3 +354,34 @@ class LPassSevenNetMLIAP(MLIAPUnified):
 
     def compute_gradients(self, data):
         pass
+
+
+def _official_class():
+    """SevenNet's own ML-IAP wrapper (full-graph evaluation), with e3nn's TorchScript code generation switched off
+    before the model is built, as for our wrapper: TorchScript crashes inside the LAMMPS process (C++ ABI clash).
+    The computation is unchanged; used as the reference for speed and memory. Defined lazily because sevenn.mliap
+    can only be imported where LAMMPS' Python module is available."""
+    from sevenn.mliap import SevenNetMLIAPWrapper
+
+    class OfficialSevenNetMLIAP(SevenNetMLIAPWrapper):
+        def _ensure_model_initialized(self):
+            import e3nn
+
+            e3nn.set_optimization_defaults(jit_script_fx=False)
+            return super()._ensure_model_initialized()
+
+    OfficialSevenNetMLIAP.__module__ = __name__
+    OfficialSevenNetMLIAP.__qualname__ = "OfficialSevenNetMLIAP"
+    return OfficialSevenNetMLIAP
+
+
+def __getattr__(name):            # PEP 562: lets pickle find OfficialSevenNetMLIAP when LAMMPS loads the model file
+    if name == "OfficialSevenNetMLIAP":
+        cls = _official_class()
+        globals()[name] = cls
+        return cls
+    raise AttributeError(name)
+
+
+def official_sevennet_mliap(checkpoint, **kwargs):
+    return __getattr__("OfficialSevenNetMLIAP")(checkpoint, **kwargs)
