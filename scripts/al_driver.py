@@ -202,7 +202,9 @@ def main():
     ap.add_argument("--max-train-atoms", type=int, default=4000,
                     help="larger frames: LAMMPS spot-check (--teacher-lmp) + carved clusters as training data")
     ap.add_argument("--teacher-lmp", default=None, help="LAMMPS ML-IAP .pt of the teacher (needed for large frames)")
-    ap.add_argument("--carve-radius", type=float, default=7.0, help="A; cluster radius before bond completion")
+    ap.add_argument("--carve-radius", type=float, default=13.0,
+                    help="A; cluster radius before bond completion. 13 A reproduces the bulk correction at the centre atoms to "
+                         "~1% for water and SiO2 (7 A: ~50%; CuNi is converged at 7 A); see experimental/validate_clusters.py")
     ap.add_argument("--carve-per-frame", type=int, default=4)
     ap.add_argument("--carve-frames", type=int, default=2)
     ap.add_argument("--al-weight", type=float, default=1.0, help="loss weight of frames acquired on the fly (config_type al / al_cluster)")
