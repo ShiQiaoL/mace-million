@@ -125,7 +125,7 @@ class FastLayers:
         self.d_in1 = d_in1
         self.skip0 = SpeciesSkip(b0.skip_tp, species_cols, n_elem, d_in0, dt, dev)
         self.skip1 = SpeciesSkip(b1.skip_tp, species_cols, n_elem, d_in1, dt, dev)
-        # optional: tabulated radial TP weights (exact to ~1e-7 eV/A; see spline_w.py / conv_spline.py)
+        # optional: tabulated radial TP weights (512 knots: <= 1.6e-5 eV/A in forces, ~fp32 roundoff; see spline_w.py)
         self.sw = None
         if spline_grid:
             from . import spline_w

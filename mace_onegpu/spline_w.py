@@ -6,7 +6,9 @@ Replaces `blk.conv_tp_weights(edge_feats)` (a 4-layer MLP per edge) by a cubic-H
 tables (conv_spline.build_tables).  The tensor product itself stays cuEquivariance (fast forward AND backward).
     forward : W[e, :]  = Hermite(TV, TG; r_e, pair_e)                      (Triton, one row per edge)
     backward: dL/dr_e  = sum_d dL/dW[e, d] * dW/dr[e, d]                    (Triton, same table)
-Accuracy (fp64 sampling, 512 knots): spline error ~1e-7 eV/A in forces, far below fp32 roundoff.
+Accuracy (fp64 sampling, 512 knots; experimental/validate_numerics.py): largest force error from the tables
+1.6e-5 (water), 8e-6 (SiO2), 8e-7 eV/A (CuNi), comparable to fp32 roundoff (0.7-2.1e-5); it falls as knots^-3.
+The backward kernel is the analytic derivative of the forward interpolant, so forces stay derivatives of the energy.
 """
 import torch
 import triton
