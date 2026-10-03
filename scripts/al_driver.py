@@ -139,7 +139,7 @@ def lammps_check(cd, st, model, tag, a, env):
     return out
 
 
-def carve_clusters(at, dF, n_clusters, radius, max_atoms, bond_scale=1.2, closure=3):
+def carve_clusters(at, dF, n_clusters, radius, max_atoms, bond_scale=1.2, closure=3, mode="worst", seed=0):
     """Non-periodic clusters around the atoms with the largest student error, separated by >= 2*radius.
     Element-general: bonds cut by the sphere are completed with covalent radii (ase natural_cutoffs x bond_scale),
     so no dangling fragments; the cluster is recentred in a vacuum box (pbc False, no stress label)."""
@@ -147,7 +147,9 @@ def carve_clusters(at, dF, n_clusters, radius, max_atoms, bond_scale=1.2, closur
     from ase.data import covalent_radii
     from ase.geometry import find_mic
 
-    order = np.argsort(-dF)
+    # mode "worst": centres at the atoms with the largest student error (the supervision); "random": uniformly
+    # random centres with the same cluster count and radius (the control of the collaborator plan, P1)
+    order = np.argsort(-dF) if mode == "worst" else np.random.default_rng(seed).permutation(len(dF))
     centres, out = [], []
     rcov = covalent_radii[at.numbers] * bond_scale
     for c in order:
@@ -207,6 +209,8 @@ def main():
                          "~1% for water and SiO2 (7 A: ~50%; CuNi is converged at 7 A); see experimental/validate_clusters.py")
     ap.add_argument("--carve-per-frame", type=int, default=4)
     ap.add_argument("--carve-frames", type=int, default=2)
+    ap.add_argument("--carve-mode", choices=["worst", "random"], default="worst",
+                    help="centres of the carved clusters: atoms with the largest error, or random atoms (control)")
     ap.add_argument("--al-weight", type=float, default=1.0, help="loss weight of frames acquired on the fly (config_type al / al_cluster)")
     ap.add_argument("--finetune-epochs", type=int, default=40)
     ap.add_argument("--chunk", type=int, default=512)
@@ -308,7 +312,8 @@ def main():
                 at = read(tr, format="lammps-dump-text", index=r["frame"])
                 at.numbers = np.array([zmap[int(z)] for z in at.numbers])
                 at.pbc = True
-                for cl in carve_clusters(at, dFs[r["frame"]], a.carve_per_frame, a.carve_radius, a.max_train_atoms):
+                for cl in carve_clusters(at, dFs[r["frame"]], a.carve_per_frame, a.carve_radius, a.max_train_atoms,
+                                         mode=a.carve_mode, seed=1000 * c + r["frame"]):
                     cl.calc = teacher
                     E, F = cl.get_potential_energy(), cl.get_forces()
                     cl.calc = None
