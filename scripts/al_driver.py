@@ -217,6 +217,7 @@ def main():
     ap.add_argument("--carve-mode", choices=["worst", "random"], default="worst",
                     help="centres of the carved clusters: atoms with the largest error, or random atoms (control)")
     ap.add_argument("--al-weight", type=float, default=1.0, help="loss weight of frames acquired on the fly (config_type al / al_cluster)")
+    ap.add_argument("--md-seed", type=int, default=20260926, help="LAMMPS velocity seed of cycle c is md_seed + c (paired arms: same seed)")
     ap.add_argument("--inner-radius", type=float, default=0.0,
                     help="A; > 0: only cluster atoms within this distance of the centre carry force loss (array forces_weight; "
                          "needs the per-atom-weight MACE patch on PYTHONPATH). 0 = all cluster atoms (default)")
@@ -271,7 +272,7 @@ def main():
                "-log", "log.lammps", "-var", "start_file", st["start"], "-var", "restart", str(st["restart"]),
                "-var", "model_file", tp, "-var", "elems", " ".join(a.elems), "-var", "steps", str(a.segment_steps),
                "-var", "dt", str(a.dt), "-var", "temp", str(a.temp), "-var", "press", str(a.press),
-               "-var", "dump_every", str(a.dump_every), "-var", "seed", str(20260926 + c)]
+               "-var", "dump_every", str(a.dump_every), "-var", "seed", str(a.md_seed + c)]
         with open(os.path.join(cd, "lammps.out"), "w") as fh:
             rc = subprocess.run(cmd, cwd=cd, stdout=fh, stderr=subprocess.STDOUT, env=env, timeout=a.segment_timeout).returncode
         out = open(os.path.join(cd, "lammps.out"), errors="replace").read()
