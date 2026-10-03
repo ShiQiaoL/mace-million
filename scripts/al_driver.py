@@ -139,10 +139,12 @@ def lammps_check(cd, st, model, tag, a, env):
     return out
 
 
-def carve_clusters(at, dF, n_clusters, radius, max_atoms, bond_scale=1.2, closure=3, mode="worst", seed=0):
+def carve_clusters(at, dF, n_clusters, radius, max_atoms, bond_scale=1.2, closure=3, mode="worst", seed=0, inner=0.0):
     """Non-periodic clusters around the atoms with the largest student error, separated by >= 2*radius.
     Element-general: bonds cut by the sphere are completed with covalent radii (ase natural_cutoffs x bond_scale),
-    so no dangling fragments; the cluster is recentred in a vacuum box (pbc False, no stress label)."""
+    so no dangling fragments; the cluster is recentred in a vacuum box (pbc False, no stress label).
+    inner > 0: per-atom force weights (array forces_weight) = 1 within `inner` of the centre, 0 in the buffer beyond,
+    so that only the inner region, whose labels match the bulk, enters the force loss (needs the patched MACE)."""
     from ase import Atoms
     from ase.data import covalent_radii
     from ase.geometry import find_mic
@@ -176,6 +178,9 @@ def carve_clusters(at, dF, n_clusters, radius, max_atoms, bond_scale=1.2, closur
         cl = Atoms(numbers=at.numbers[sel], positions=d[sel], pbc=False)
         cl.center(vacuum=8.0)
         cl.info["carve_centre"] = int(c)
+        if inner > 0:
+            cl.arrays["forces_weight"] = (dist[sel] <= inner).astype(float)
+            cl.info["inner_radius"] = float(inner)
         out.append(cl)
     return out
 
@@ -212,6 +217,11 @@ def main():
     ap.add_argument("--carve-mode", choices=["worst", "random"], default="worst",
                     help="centres of the carved clusters: atoms with the largest error, or random atoms (control)")
     ap.add_argument("--al-weight", type=float, default=1.0, help="loss weight of frames acquired on the fly (config_type al / al_cluster)")
+    ap.add_argument("--inner-radius", type=float, default=0.0,
+                    help="A; > 0: only cluster atoms within this distance of the centre carry force loss (array forces_weight; "
+                         "needs the per-atom-weight MACE patch on PYTHONPATH). 0 = all cluster atoms (default)")
+    ap.add_argument("--cluster-energy", type=int, default=1, choices=[0, 1],
+                    help="1: cluster total energies enter the energy loss (default); 0: config_energy_weight = 0 for clusters")
     ap.add_argument("--finetune-epochs", type=int, default=40)
     ap.add_argument("--chunk", type=int, default=512)
     ap.add_argument("--teacher-chunk", type=int, default=16384, help="receiver chunk for the teacher LAMMPS check (memory)")
@@ -219,6 +229,10 @@ def main():
     ap.add_argument("--segment-timeout", type=int, default=3600, help="s, wall-time limit of one MD segment")
     a = ap.parse_args()
     t_job = time.time()
+    if a.inner_radius > 0:
+        import mace.modules.loss as _ml
+        if not hasattr(_ml, "node_forces_weight"):
+            sys.exit("--inner-radius needs the per-atom force-weight MACE patch (software/src/mace-0.3.15-nodeweights on PYTHONPATH)")
     wd = os.path.abspath(a.work_dir)
     os.makedirs(wd, exist_ok=True)
     log = os.path.join(wd, "driver.log")
@@ -313,11 +327,13 @@ def main():
                 at.numbers = np.array([zmap[int(z)] for z in at.numbers])
                 at.pbc = True
                 for cl in carve_clusters(at, dFs[r["frame"]], a.carve_per_frame, a.carve_radius, a.max_train_atoms,
-                                         mode=a.carve_mode, seed=1000 * c + r["frame"]):
+                                         mode=a.carve_mode, seed=1000 * c + r["frame"], inner=a.inner_radius):
                     cl.calc = teacher
                     E, F = cl.get_potential_energy(), cl.get_forces()
                     cl.calc = None
                     cl.info.update(REF_energy=E, config_type="al_cluster")
+                    if not a.cluster_energy:      # the vacuum cluster's total energy is not a bulk label: keep it out of the loss
+                        cl.info["config_energy_weight"] = 0.0
                     cl.arrays["REF_forces"] = F
                     labelled.append(cl)
             rec["carved"] = [len(x) for x in labelled]

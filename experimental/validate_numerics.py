@@ -229,6 +229,7 @@ def main():
     dec[f"interp_fp64_M{M_prod}"] = errors(out_tab_prod, out_fast, N, V)
 
     # ---------------------------------------------------------------- finite differences (fp64)
+    a_r_max = float(m64.r_max)
     rng = np.random.default_rng(7)
     fmag = np.linalg.norm(out_fast[1], axis=1)
     pick = [int(np.argmax(fmag))] + [int(i) for i in rng.choice(N, size=a.fd_atoms - 1, replace=False)]
@@ -243,19 +244,50 @@ def main():
                 p[i, c] -= 2 * a.fd_h
                 Em = evf(p, box, spidx)[0]
                 dev_f.append(abs(-(Ep - Em) / (2 * a.fd_h) - base[1][i, c]))
-        for c in range(3):
-            sc = np.ones(3)
-            sc[c] = 1 + a.fd_strain
-            Ep = evf(pos * sc, box * sc, spidx)[0]
-            sc[c] = 1 - a.fd_strain
-            Em = evf(pos * sc, box * sc, spidx)[0]
-            dev_s.append(abs((Ep - Em) / (2 * a.fd_strain) - base[2][c, c]))
+        strain = {}
+        for hs in (a.fd_strain, 10 * a.fd_strain):
+            dev_s = []
+            for c in range(3):                      # diagonal components: periodic cell and positions scaled
+                sc = np.ones(3)
+                sc[c] = 1 + hs
+                Ep = evf(pos * sc, box * sc, spidx)[0]
+                sc[c] = 1 - hs
+                Em = evf(pos * sc, box * sc, spidx)[0]
+                dev_s.append(abs((Ep - Em) / (2 * hs) - base[2][c, c]))
+            strain[f"{hs:g}"] = {"max_dev_S_over_V": float(max(dev_s)) / V, "dev_S_diag_over_V": [float(d) / V for d in dev_s]}
+        # shear components: the same atoms as an isolated cluster in a large orthogonal box (images out of reach),
+        # deformed by F = I + h E_ab; dE/dh = S_ab = sum_edges dE/dv_a v_b (ASE stress = S / V)
+        rmax = float(a_r_max)
+        Lbig = float(np.max(box)) + 2 * rmax + 4.0
+        pos_c = pos - pos.mean(0) + 0.5 * Lbig
+        box_c = np.array([Lbig, Lbig, Lbig])
+        base_c = evf(pos_c, box_c, spidx)
+        shear = {}
+        for hs in (a.fd_strain, 10 * a.fd_strain):
+            dev = {}
+            for (ia, ib) in ((0, 1), (0, 2), (1, 2), (0, 0), (1, 1), (2, 2)):
+                Fp = np.eye(3)
+                Fp[ia, ib] += hs
+                Fm = np.eye(3)
+                Fm[ia, ib] -= hs
+                Ep = evf(pos_c @ Fp.T, box_c, spidx)[0]
+                Em = evf(pos_c @ Fm.T, box_c, spidx)[0]
+                dev[f"{ia}{ib}"] = abs((Ep - Em) / (2 * hs) - base_c[2][ia, ib])
+            shear[f"{hs:g}"] = {"max_dev_S_eV": float(max(dev.values())), "dev_S_eV": {k: float(v) for k, v in dev.items()},
+                                "max_dev_S_over_V": float(max(dev.values())) / V,
+                                "max_abs_S_eV": float(np.abs(base_c[2]).max())}
         fd[tag] = {"atoms": pick, "h": a.fd_h, "max_dev_force": float(max(dev_f)), "median_dev_force": float(np.median(dev_f)),
                    "max_force_component": float(max(abs(base[1][i, c]) for i in pick for c in range(3))),
-                   "strain": a.fd_strain, "max_dev_S_over_V": float(max(dev_s)) / V,
-                   "S_diag_over_V": [float(base[2][c, c]) / V for c in range(3)]}
-        print(f"  FD {tag}: force max dev {fd[tag]['max_dev_force']:.2e} eV/A (median {fd[tag]['median_dev_force']:.1e}), "
-              f"strain max dev {fd[tag]['max_dev_S_over_V']:.2e} eV/A^3")
+                   "strain": a.fd_strain, "max_dev_S_over_V": strain[f"{a.fd_strain:g}"]["max_dev_S_over_V"],
+                   "S_diag_over_V": [float(base[2][c, c]) / V for c in range(3)],
+                   "strain_diag_periodic": strain, "strain_all_cluster": shear,
+                   "convention": "S_ab = dE/d(eps_ab) = sum_edges dE/dv_a v_b (eV); ASE stress = S/V; cell deformed by F = I + h E_ab"}
+        print(f"  FD {tag}: force max dev {fd[tag]['max_dev_force']:.2e} eV/A (median {fd[tag]['median_dev_force']:.1e}); "
+              f"diagonal strain (periodic) max dev {fd[tag]['max_dev_S_over_V']:.2e} eV/A^3 at h={a.fd_strain:g}, "
+              f"{strain[f'{10 * a.fd_strain:g}']['max_dev_S_over_V']:.2e} at h={10 * a.fd_strain:g}; "
+              f"all six components (cluster) max dev {shear[f'{a.fd_strain:g}']['max_dev_S_eV']:.2e} eV "
+              f"(= {shear[f'{a.fd_strain:g}']['max_dev_S_over_V']:.2e} eV/A^3) at h={a.fd_strain:g}, "
+              f"{shear[f'{10 * a.fd_strain:g}']['max_dev_S_eV']:.2e} eV at h={10 * a.fd_strain:g}; |S| max {shear[f'{a.fd_strain:g}']['max_abs_S_eV']:.3g} eV")
     res["finite_differences"] = fd
     del m64, plain64, fast64, tab64_eval, fl64
     torch.cuda.empty_cache()
