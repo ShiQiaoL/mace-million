@@ -122,8 +122,10 @@ If `forward_exchange` segfaults on two GPUs, add `gpu/aware on` to the `-pk kokk
 | `MACE3P_COMPILE` | `0` | `1`: `torch.compile` (inductor) the layer functions used inside the CUDA graphs (fixed shapes, compiled once). |
 | `MACE3P_COMPILE_MODE` | unset (inductor default) | inductor mode for `MACE3P_COMPILE=1`, e.g. `max-autotune-no-cudagraphs` (the CUDA graphs are captured by the wrapper itself). |
 | `MACE3P_CAP_MARGIN` | `1.25` | headroom factor of the CUDA-graph capacities (nodes, edges, atoms incl. ghosts). A recapture takes seconds, or tens of seconds with compile. |
-| `MACE3P_CACHE_GRAPHS` | `0` | `1`: build the chunk topology once per force call (pass A) and reuse it in passes B and C (about 0.75 kB/atom). |
-| `MACE3P_LOG` | unset | path of a JSONL log with one line per force call: step, nlocal/ntotal/npairs, per-pass times, LAMMPS gap time, peak GPU memory, CUDA-graph recaptures. |
+| `MACE3P_TOPO` | `batched` | how the receiver chunks' local graphs (node lists, local edge indices) are built: `batched` builds all chunks of a force call in a few passes over groups of consecutive chunks (one `torch.unique` per group); `chunk` builds them one chunk at a time (the earlier path, host-bound: about a dozen launches and a device sync per chunk). Both give identical graphs. |
+| `MACE3P_TOPO_EDGES` | `30000000` | edges per group of the batched build (bounds its transient memory, about 50 B per edge). |
+| `MACE3P_CACHE_GRAPHS` | `0` | with `MACE3P_TOPO=chunk` only: `1` keeps the per-chunk topologies of pass A for passes B and C (4 B per edge). The batched build always keeps them. |
+| `MACE3P_LOG` | unset | path of a JSONL log with one line per force call: step, nlocal/ntotal/npairs, per-pass times (`A`, `B`, `C`; `A_topology` and `A_load` inside pass A), LAMMPS gap time, the peak torch allocation of each pass (`peak_A`, `peak_B`, `peak_C`, `peak_out`) and overall, CUDA-graph recaptures. |
 | `MACE3P_PROFILE` | `0` | `1`: synchronise and time the local-graph construction (`graph_*` fields in the log). |
 | `MACE3P_SKIN` | `2.0` | neighbour skin (A) used **only** by the int32 safety guard. Set it to the `neighbor` skin of the input. |
 | `MACE3P_ALLOW_HUGE` | `0` | `1`: disable the int32 neighbour-slot guard (only deliberately; see below). |

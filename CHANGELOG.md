@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Three-pass wrapper: the local graphs of all receiver chunks are built in a few batched passes per force call
+  (`ThreePassMLIAP._topology_all`, `MACE3P_TOPO=batched`, default) instead of one build per chunk, which was
+  host-bound (about a dozen launches and a device sync per chunk: 1.0 s of a 5.9-s call at 983,040 atoms with
+  30 chunks, most of the 57 s per step at 7.9M atoms with 960 chunks). The graphs are identical
+  (`tests/test_topology.py`, 27 cases against the per-chunk build, which stays available as `MACE3P_TOPO=chunk`);
+  only the local sender index of each edge is kept (4 B per edge instead of 8). The per-call log gains the
+  pass-A breakdown (`A_topology`, `A_load`) and the peak torch allocation of each pass (`peak_A/B/C/out`).
+  Measured on one H200 (water, MPA-0): forces agree with the per-chunk build to 2e-6 eV/A; the call time changes by
+  less than 3% (983,040 atoms: 6.96 -> 6.79 s at 8,192 receivers without graphs; 4.80 s unchanged at 32,768 with
+  graphs), because the construction itself takes only 6-25 ms per call there (0.13 s of 55 s at 7.9M atoms with 960
+  chunks): passes B and C, not the host, set the time. The earlier attribution of 1.0 s per call to the per-chunk
+  construction (SI of the first manuscript) was wrong and has been corrected.
 - SevenNet + cuEquivariance inside LAMMPS: chunk tensors padded to per-chunk high-water-mark shapes (`SevenNetLayers.layer_padded`,
   `MACE3P_SEVENN_PAD`), because cuEquivariance prepares kernels per shape (~2 s per new shape) and LAMMPS changes the
   pair count every step. 8.5-9.4e4 atom-steps/s from 12,288 to 983,040 water atoms, 23 GB at 983,040 (was 1.3e4 / 39 GB with e3nn; 0.5-1.0e4 with

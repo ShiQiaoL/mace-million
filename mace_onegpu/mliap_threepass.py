@@ -27,7 +27,7 @@ except ImportError:  # pragma: no cover
         def __init__(self):
             pass
 
-_RUNTIME = ("_fl", "_dev", "_cols", "_e0", "_loc", "_log", "_D1", "_pad", "_prof", "_t_graph", "_cache_graphs", "_topo", "_gx", "_use_graphs", "_fmax_abort", "_flag", "_fl_l1", "_fl_l2", "_t_end", "_hi")
+_RUNTIME = ("_fl", "_dev", "_cols", "_e0", "_loc", "_log", "_D1", "_pad", "_prof", "_t_graph", "_cache_graphs", "_topo", "_gx", "_use_graphs", "_fmax_abort", "_flag", "_fl_l1", "_fl_l2", "_t_end", "_topo_mode", "_peak", "_hi")
 
 
 class _G:
@@ -120,13 +120,14 @@ class _GraphExec:
         self.s_gv.copy_(gv)
         self.s_eat.copy_(o.scale * r0.detach().double())
 
-    def load(self, nodes, ei, e0, e1, a, b, rij, elems, rp_cpu):
+    def load(self, nodes, ls, e0, e1, a, b, rij, elems, rp_cpu, pi):
         n = nodes.numel()
         nE = e1 - e0
         self.s_nodes[:n].copy_(nodes)
-        self.s_nodes[n:].fill_(int(nodes[0]))
+        self.s_nodes[n:].fill_(a)                       # padding nodes alias the chunk's first receiver (= atom a)
         self.s_spec.copy_(elems[self.s_nodes])
-        self.s_ei[:, :nE].copy_(ei)
+        self.s_ei[0, :nE].copy_(ls)
+        self.s_ei[1, :nE].copy_(pi[e0:e1] - a)          # receivers are the chunk's own atoms: local index = global - a
         self.s_ei[:, nE:].copy_(self.padpat[nE:].expand(2, -1))
         self.s_vec[:nE].copy_(rij[e0:e1])
         self.s_vec[nE:].copy_(self.padvec.expand(self.e_cap - nE, 3))
@@ -265,6 +266,10 @@ class ThreePassMLIAP(MLIAPUnified):
             make_capture_safe()
         self._gx = None           # CUDA-graph executor for full chunks (built from the 2nd force call on)
         self._topo = {}
+        # MACE3P_TOPO=batched (default): the topologies of all receiver chunks are built in a few batched passes per
+        # force call (_topology_all); chunk: one build per chunk (the pre-October-2026 path, kept as the reference)
+        self._topo_mode = os.environ.get("MACE3P_TOPO", "batched")
+        self._peak = 0.0
         self._t_graph = 0.0
         path = os.environ.get("MACE3P_LOG")
         self._log = open(path, "a", buffering=1) if path else None
@@ -281,7 +286,8 @@ class ThreePassMLIAP(MLIAPUnified):
         return out
 
     def _topology(self, a, b, e0, e1, pi, pj):
-        """Receiver chunk [a, b): local node list (receivers first, then outside senders) and local edge index (int32)."""
+        """Receiver chunk [a, b): local node list (receivers first, then outside senders) and the local index of the
+        sender of each edge (int32); the local index of the receiver is its global index minus a."""
         dev = self._dev
         nC = b - a
         recv_g = pi[e0:e1].long()
@@ -299,11 +305,11 @@ class ThreePassMLIAP(MLIAPUnified):
         flag[new] = False
         loc[new] = torch.arange(nC, nC + new.numel(), device=dev, dtype=loc.dtype)
         nodes = torch.cat([torch.arange(a, b, device=dev, dtype=torch.int32), new.to(torch.int32)])
-        ei = torch.stack([loc[send_g], loc[recv_g]])                    # int32 [2, nE]
+        ls = loc[send_g]                                                # int32 [nE]
         loc[nodes.long()] = -1
-        return nodes, ei
+        return nodes, ls
 
-    def _assemble(self, a, b, e0, e1, nodes, ei, rij, elems, rp_cpu, e_cap):
+    def _assemble(self, a, b, e0, e1, nodes, ls, rij, elems, rp_cpu, e_cap, pi):
         dev = self._dev
         nC = b - a
         n_nodes = nodes.numel()
@@ -315,7 +321,8 @@ class ThreePassMLIAP(MLIAPUnified):
         k = e_cap - nE
         tgt = torch.arange(k, device=dev) % n_pad
         g = _G()
-        g.edge_index = torch.cat([ei.long(), torch.stack([tgt, tgt])], 1)
+        ei = torch.stack([ls.long(), (pi[e0:e1] - a).long()])
+        g.edge_index = torch.cat([ei, torch.stack([tgt, tgt])], 1)
         vec = torch.cat([rij[e0:e1], self._pad.expand(k, 3)], 0).to(self.dtype)
         g.nC, g.nE, g.n_nodes = nC, nE, n_nodes
         g.nodes, g.nodes_padded = nodes, nodes_padded
@@ -324,21 +331,69 @@ class ThreePassMLIAP(MLIAPUnified):
         return g, na, vec
 
     def _graph_impl(self, a, b, e0, e1, pi, pj, rij, elems, rp_cpu, e_cap):
-        # MACE3P_CACHE_GRAPHS=1: topology built once per force call (pass A), reused by passes B and C (~0.75 kB/atom)
+        # self._topo holds the topologies of this force call (every chunk with MACE3P_TOPO=batched, the full chunks
+        # with CUDA graphs otherwise); MACE3P_CACHE_GRAPHS=1 also keeps per-chunk builds for passes B and C
         key = (a, b)
-        topo = self._topo.get(key) if self._cache_graphs else None
+        topo = self._topo.get(key)
         if topo is None:
             topo = self._topology(a, b, e0, e1, pi, pj)
             if self._cache_graphs:
                 self._topo[key] = topo
-        return self._assemble(a, b, e0, e1, topo[0], topo[1], rij, elems, rp_cpu, e_cap)
+        return self._assemble(a, b, e0, e1, topo[0], topo[1], rij, elems, rp_cpu, e_cap, pi)
+
+    def _topology_all(self, bounds, rp_cpu, pi, pj, nl, nt):
+        """Topologies of all receiver chunks, {(a, b): (nodes int32, local sender index int32 [nE])}, identical to
+        _topology() chunk by chunk but built for groups of consecutive chunks at a time: one torch.unique over the
+        (chunk, sender) keys of the group's outside edges instead of a dozen launches and a device sync per chunk.
+        The per-chunk build is host-bound (1.0 s per call at 983k atoms with 30 chunks, 57 s per step at 7.9M atoms
+        with 960 chunks); a group is bounded by MACE3P_TOPO_EDGES edges (~50 B per edge of transient memory)."""
+        dev = self._dev
+        C = self.chunk
+        gmax = int(os.environ.get("MACE3P_TOPO_EDGES", "30000000"))
+        out = {}
+        nb = len(bounds)
+        k0 = 0
+        while k0 < nb:
+            k1 = k0 + 1
+            while k1 < nb and int(rp_cpu[bounds[k1][1]] - rp_cpu[bounds[k0][0]]) <= gmax:
+                k1 += 1
+            a0 = bounds[k0][0]
+            E0, E1 = int(rp_cpu[a0]), int(rp_cpu[bounds[k1 - 1][1]])
+            ng = k1 - k0
+            recv = pi[E0:E1]                                             # int32, non-decreasing
+            send = pj[E0:E1]
+            cid = torch.div(recv - a0, C, rounding_mode="floor")         # chunk within the group
+            lo = cid * C + a0                                            # chunk start a
+            hi = torch.clamp(lo + C, max=nl)                             # chunk end b
+            ls = send - lo                                               # local index of inside senders
+            idx = torch.nonzero((send < lo) | (send >= hi)).squeeze(1)   # outside edges
+            key = cid[idx].long() * nt + send[idx].long()
+            uniq, inv = torch.unique(key, sorted=True, return_inverse=True)
+            uc = torch.div(uniq, nt, rounding_mode="floor")              # chunk of each unique outside sender
+            us = (uniq - uc * nt).to(torch.int32)                        # the sender, ascending within a chunk
+            cnt = torch.bincount(uc, minlength=ng)
+            start = torch.cumsum(cnt, 0) - cnt
+            ca = torch.arange(ng, device=dev, dtype=torch.long) * C + a0
+            nC = torch.clamp(ca + C, max=nl) - ca                         # receivers per chunk
+            lid = nC[uc] + torch.arange(uniq.numel(), device=dev) - start[uc]
+            ls[idx] = lid.to(torch.int32)[inv]
+            cnt_h, start_h = cnt.tolist(), start.tolist()
+            for k in range(k0, k1):
+                a, b = bounds[k]
+                e0, e1 = int(rp_cpu[a]), int(rp_cpu[b])
+                s, c = start_h[k - k0], cnt_h[k - k0]
+                nodes = torch.cat([torch.arange(a, b, device=dev, dtype=torch.int32), us[s:s + c]])
+                out[(a, b)] = (nodes, ls[e0 - E0:e1 - E0])
+            k0 = k1
+        return out
 
     def _prepare_graphs(self, bounds, rp_cpu, pi, pj, rij, elems, nt, C):
-        """Topologies of all full chunks + a captured executor that fits them (rebuilt if capacities are exceeded).
-        Returns (gx, topo) or (None, {}) on the first force call (eager warm-up; D1 unknown)."""
+        """A captured executor that fits the topologies of all full chunks (rebuilt if its capacities are exceeded);
+        None on the first force call (eager warm-up; D1 unknown).  Uses self._topo, building the full chunks' entries
+        one by one if the batched build did not run (MACE3P_TOPO=chunk)."""
         full = [(a, b) for a, b in bounds if b - a == C]
         if not full:
-            return None, {}
+            return None
         if self._D1 is None:          # width of h1: one eager layer-1 call on the first full chunk (also JIT warm-up)
             a, b = full[0]
             e0, e1 = int(rp_cpu[a]), int(rp_cpu[b])
@@ -346,13 +401,15 @@ class ThreePassMLIAP(MLIAPUnified):
             with torch.no_grad():
                 g, na, vec = self._graph(a, b, e0, e1, pi, pj, rij, elems, rp_cpu, e_cap0)
                 self._D1 = int(self._fl.layer1(self.model, g, na, vec).shape[1])
-        topo = {}
-        n_max = e_max = 0
-        for a, b in full:
-            e0, e1 = int(rp_cpu[a]), int(rp_cpu[b])
-            topo[(a, b)] = self._topology(a, b, e0, e1, pi, pj)
-            n_max = max(n_max, topo[(a, b)][0].numel())
-            e_max = max(e_max, e1 - e0)
+        missing = [k for k in full if k not in self._topo]
+        if missing:
+            _t_topo = time.perf_counter()
+            for a, b in missing:
+                self._topo[(a, b)] = self._topology(a, b, int(rp_cpu[a]), int(rp_cpu[b]), pi, pj)
+            torch.cuda.synchronize()
+            self._t_topo += time.perf_counter() - _t_topo
+        n_max = max(self._topo[k][0].numel() for k in full)
+        e_max = max(int(rp_cpu[b] - rp_cpu[a]) for a, b in full)
         gx = self._gx
         if gx is None or not gx.fits(n_max, e_max, nt):
             if gx is not None and self._log:
@@ -367,11 +424,21 @@ class ThreePassMLIAP(MLIAPUnified):
             nt_cap = int(nt * mg) + 1024
             gx = _GraphExec(self, C, n_cap, e_cap, nt_cap, self._D1)
             a, b = full[0]
-            gx.load(*topo[(a, b)], int(rp_cpu[a]), int(rp_cpu[b]), a, b, rij, elems, rp_cpu)
+            gx.load(*self._topo[(a, b)], int(rp_cpu[a]), int(rp_cpu[b]), a, b, rij, elems, rp_cpu, pi)
             gx.capture()
             self._gx = gx
             self.n_captures = getattr(self, "n_captures", 0) + 1
-        return gx, topo
+        return gx
+
+    def _peak_gb(self):
+        """Peak torch allocation (GB) since the previous call of this function; the running maximum is self._peak.
+        Only when the per-call log is on (the reset changes what torch.cuda.max_memory_allocated reports)."""
+        if self._log is None:
+            return None
+        p = torch.cuda.max_memory_allocated() / 1e9
+        torch.cuda.reset_peak_memory_stats()
+        self._peak = max(self._peak, p)
+        return round(p, 3)
 
     # ------------------------------------------------------------------ LAMMPS entry point
     def compute_forces(self, data):
@@ -426,12 +493,21 @@ class ThreePassMLIAP(MLIAPUnified):
             t["prep"] = time.perf_counter() - t_start
         t0 = time.perf_counter()
         H1 = None
-        gx, topo = self._prepare_graphs(bounds, rp_cpu, pi, pj, rij, elems, nt, C) if self._use_graphs else (None, {})
+        self._t_topo = self._t_load = 0.0
+        _t_prep = time.perf_counter()
+        if self._topo_mode == "batched":
+            self._topo = self._topology_all(bounds, rp_cpu, pi, pj, nl, nt)
+            torch.cuda.synchronize()
+            self._t_topo = time.perf_counter() - _t_prep
+        gx = self._prepare_graphs(bounds, rp_cpu, pi, pj, rij, elems, nt, C) if self._use_graphs else None
+        t["A_prepare"] = time.perf_counter() - _t_prep
         with torch.no_grad():
             for a, b in bounds:
                 e0, e1 = int(rp_cpu[a]), int(rp_cpu[b])
                 if gx is not None and b - a == C:
-                    gx.load(*topo[(a, b)], e0, e1, a, b, rij, elems, rp_cpu)
+                    _tl = time.perf_counter()
+                    gx.load(*self._topo[(a, b)], e0, e1, a, b, rij, elems, rp_cpu, pi)
+                    self._t_load += time.perf_counter() - _tl
                     gx.graphs["A"].replay()
                     h1 = gx.s_h1
                 else:
@@ -447,7 +523,10 @@ class ThreePassMLIAP(MLIAPUnified):
         del H1
         torch.cuda.synchronize()
         t["A"] = time.perf_counter() - t0
+        t["peak_A"] = self._peak_gb()
         t["graph_A"] = self._t_graph
+        t["A_topology"] = self._t_topo
+        t["A_load"] = self._t_load
         # ---------------- pass B
         t0 = time.perf_counter()
         if gx is not None:
@@ -458,7 +537,7 @@ class ThreePassMLIAP(MLIAPUnified):
         for a, b in bounds:
             e0, e1 = int(rp_cpu[a]), int(rp_cpu[b])
             if gx is not None and b - a == C:
-                gx.load(*topo[(a, b)], e0, e1, a, b, rij, elems, rp_cpu)
+                gx.load(*self._topo[(a, b)], e0, e1, a, b, rij, elems, rp_cpu, pi)
                 gx.graphs["B"].replay()
                 PF[e0:e1] += gx.s_gv[: e1 - e0].float()
                 eat[a:b] += gx.s_eat
@@ -478,13 +557,14 @@ class ThreePassMLIAP(MLIAPUnified):
         del G1
         torch.cuda.synchronize()
         t["B"] = time.perf_counter() - t0
+        t["peak_B"] = self._peak_gb()
         t["graph_AB"] = self._t_graph
         # ---------------- pass C
         t0 = time.perf_counter()
         for a, b in bounds:
             e0, e1 = int(rp_cpu[a]), int(rp_cpu[b])
             if gx is not None and b - a == C:
-                gx.load(*topo[(a, b)], e0, e1, a, b, rij, elems, rp_cpu)
+                gx.load(*self._topo[(a, b)], e0, e1, a, b, rij, elems, rp_cpu, pi)
                 gx.s_g1c.copy_(G1r[a:b])
                 gx.graphs["C"].replay()
                 PF[e0:e1] += gx.s_gv[: e1 - e0].float()
@@ -503,6 +583,7 @@ class ThreePassMLIAP(MLIAPUnified):
         del G1r
         torch.cuda.synchronize()
         t["C"] = time.perf_counter() - t0
+        t["peak_C"] = self._peak_gb()
         t["graph_ABC"] = self._t_graph
         self._topo = {}
         eat += self._e0[elems[:nl]] + self.shift
@@ -531,7 +612,7 @@ class ThreePassMLIAP(MLIAPUnified):
                                             e_cap=e_cap, sorted_pairs=order is None, graphs=gx is not None,
                                             captures=getattr(self, "n_captures", 0), t_total=time.perf_counter() - t_start, **t,
                                             t_output=t_out, t_gap_lammps=t_gap,
-                                            peak_gb=torch.cuda.max_memory_allocated() / 1e9)) + "\n")
+                                            peak_out=self._peak_gb(), peak_gb=self._peak)) + "\n")
             self._t_end = time.perf_counter()
 
     def compute_descriptors(self, data):
