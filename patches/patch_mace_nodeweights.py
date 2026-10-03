@@ -42,6 +42,7 @@ patch("data/utils.py",
     properties["node_forces_weight"] = np.asarray(
         atoms.arrays.get("forces_weight", np.ones(len(atoms))), dtype=float
     ).reshape(-1)
+    property_weights["node_forces_weight"] = 1.0      # bookkeeping only (dataset logging iterates over properties)
 
     return Configuration(""")
 
