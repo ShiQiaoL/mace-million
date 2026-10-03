@@ -16,6 +16,31 @@ import numpy as np
 KEYS = {"energy": "REF_energy", "forces": "REF_forces", "stress": "REF_stress"}  # noqa: E402
 from ase.io import read  # noqa: E402
 
+
+def _calc_result(at, name):
+    """Labels that ASE moved into a SinglePointCalculator (extxyz keys energy / forces / stress)."""
+    if at.calc is not None and name in getattr(at.calc, "results", {}):
+        return at.calc.results[name]
+    raise KeyError(name)
+
+
+def ref_forces(at):
+    k = KEYS["forces"]
+    return np.asarray(at.arrays[k]) if k in at.arrays else np.asarray(_calc_result(at, k))
+
+
+def ref_energy(at):
+    k = KEYS["energy"]
+    return float(at.info[k]) if k in at.info else float(_calc_result(at, k))
+
+
+def ref_stress(at):
+    k = KEYS["stress"]
+    v = np.asarray(at.info[k]) if k in at.info else np.asarray(_calc_result(at, k))
+    if v.size == 6:                                   # Voigt xx yy zz yz xz xy
+        v = np.array([[v[0], v[5], v[4]], [v[5], v[1], v[3]], [v[4], v[3], v[2]]])
+    return v.reshape(3, 3)
+
 EV_A3_TO_BAR = 1.602176634e6
 
 
@@ -26,11 +51,11 @@ def evaluate(frames, calc):
         a.calc = calc
         F = a.get_forces()
         E = a.get_potential_energy()
-        dF.append((F - at.arrays[KEYS["forces"]]).ravel())
-        dE.append((E - at.info[KEYS["energy"]]) / len(at))
-        if "REF_stress" in at.info and all(at.pbc):
+        dF.append((F - ref_forces(at)).ravel())
+        dE.append((E - ref_energy(at)) / len(at))
+        if (KEYS["stress"] in at.info or (at.calc is not None and KEYS["stress"] in getattr(at.calc, "results", {}))) and all(at.pbc):
             S = a.get_stress(voigt=False)
-            St = np.asarray(at.info[KEYS["stress"]]).reshape(3, 3)
+            St = ref_stress(at)
             dP.append((-np.trace(S) + np.trace(St)) / 3 * EV_A3_TO_BAR)
     dF = np.concatenate(dF)
     dE = np.asarray(dE)
