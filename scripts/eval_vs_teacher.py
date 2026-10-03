@@ -11,7 +11,9 @@ import json
 import os
 
 os.environ.setdefault("TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD", "1")
-import numpy as np  # noqa: E402
+import numpy as np
+
+KEYS = {"energy": "REF_energy", "forces": "REF_forces", "stress": "REF_stress"}  # noqa: E402
 from ase.io import read  # noqa: E402
 
 EV_A3_TO_BAR = 1.602176634e6
@@ -24,11 +26,11 @@ def evaluate(frames, calc):
         a.calc = calc
         F = a.get_forces()
         E = a.get_potential_energy()
-        dF.append((F - at.arrays["REF_forces"]).ravel())
-        dE.append((E - at.info["REF_energy"]) / len(at))
+        dF.append((F - at.arrays[KEYS["forces"]]).ravel())
+        dE.append((E - at.info[KEYS["energy"]]) / len(at))
         if "REF_stress" in at.info and all(at.pbc):
             S = a.get_stress(voigt=False)
-            St = np.asarray(at.info["REF_stress"]).reshape(3, 3)
+            St = np.asarray(at.info[KEYS["stress"]]).reshape(3, 3)
             dP.append((-np.trace(S) + np.trace(St)) / 3 * EV_A3_TO_BAR)
     dF = np.concatenate(dF)
     dE = np.asarray(dE)
@@ -47,7 +49,12 @@ def main():
     ap.add_argument("--max-frames", type=int, default=200)
     ap.add_argument("--json", default=None)
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--energy-key", default="REF_energy")
+    ap.add_argument("--forces-key", default="REF_forces")
+    ap.add_argument("--stress-key", default="REF_stress")
     a = ap.parse_args()
+    global KEYS
+    KEYS = {"energy": a.energy_key, "forces": a.forces_key, "stress": a.stress_key}
     frames = read(a.frames, index=":")[: a.max_frames]
     res = {}
     for m in a.models:
