@@ -178,6 +178,7 @@ def carve_clusters(at, dF, n_clusters, radius, max_atoms, bond_scale=1.2, closur
         cl = Atoms(numbers=at.numbers[sel], positions=d[sel], pbc=False)
         cl.center(vacuum=8.0)
         cl.info["carve_centre"] = int(c)
+        cl.arrays["parent_index"] = np.where(sel)[0]          # index of every cluster atom in the periodic frame
         if inner > 0:
             cl.arrays["forces_weight"] = (dist[sel] <= inner).astype(float)
             cl.info["inner_radius"] = float(inner)
