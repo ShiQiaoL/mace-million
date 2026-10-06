@@ -81,6 +81,32 @@ cmake --build . -j 12
 - `OMP_NUM_THREADS=1` and `MKL_THREADING_LAYER=GNU` are recommended.
 - Put the repository root on `PYTHONPATH` so that LAMMPS can unpickle `mace_onegpu.*` from the model `.pt` file.
 
+## Known defect of the reference LAMMPS version: `fix spring/self/kk`
+
+`src/KOKKOS/fix_spring_self_kokkos.cpp` of LAMMPS 11 Feb 2026 calls `k_xoriginal.modify_host()` in `post_force`
+without writing the host copy. After the device copy has been marked modified (by `DualView::resize` when
+`atom->nmax` grows, or by the device-side exchange of the fix), this trips Kokkos' DualView consistency check
+(`Kokkos_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK`, on by default) and the run aborts with
+
+```
+Kokkos::DualView::modify_host ERROR: Concurrent modification of host and device views in DualView "spring/self:xoriginal"
+```
+
+With the check disabled the stale host copy would silently overwrite the anchor positions instead. The defect is
+independent of the ML-IAP patch above (reproduced with `pair_style lj/cut` on the patched and the unpatched build).
+Upstream fixed it in September 2026 (commits 1b110d2, 3a87b51, f51d56f and 102d2d0 of lammps/lammps).
+`fix_spring_self_kokkos_11Feb2026_backport.patch` brings the upstream `develop` version of
+`fix_spring_self_kokkos.{cpp,h}` (as of 6 Oct 2026) to the reference source; apply it like the ML-IAP patch:
+
+```bash
+patch -p1 < /path/to/mace-onegpu/lammps/fix_spring_self_kokkos_11Feb2026_backport.patch
+```
+
+Until then, run `fix spring/self` on the host (`suffix off` before and `suffix on` after the fix command).
+Other Kokkos fix and compute styles of this LAMMPS version received coherence fixes in the same upstream commits
+(e.g. shake/kk, rigid/small/kk, neigh/history/kk, langevin/kk with `scale`, nh/kk, efield/kk, deform/kk,
+wall/gran/kk); none of them is used by the runs of the paper.
+
 ## LAMMPS's own tests
 
 `ctest -R mliap` (build with `-D ENABLE_TESTING=ON`) gives the same result on the patched and on the unpatched build
