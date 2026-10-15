@@ -107,6 +107,34 @@ Other Kokkos fix and compute styles of this LAMMPS version received coherence fi
 (e.g. shake/kk, rigid/small/kk, neigh/history/kk, langevin/kk with `scale`, nh/kk, efield/kk, deform/kk,
 wall/gran/kk); none of them is used by the runs of the paper.
 
+## Known defect of the reference LAMMPS version: per-atom virial of `pair_style mliap` under Kokkos
+
+`src/KOKKOS/pair_mliap_kokkos.cpp` of LAMMPS 11 Feb 2026 allocates its own per-atom arrays (it calls `ev_init` with
+the base-class allocation turned off) but sizes and checks the per-atom virial `k_vatom` against `maxeatom` instead of
+`maxvatom`, and labels it `pair:eatom`. `Pair::ev_setup` raises `maxeatom` only when a per-atom energy is requested, so
+a per-atom virial alone, which is what `compute stress/atom` (or `centroid/stress/atom`) requests, leaves `k_vatom`
+unallocated; the first tally writes through a null device pointer and the run dies with
+
+```
+cudaFree(arg_alloc_ptr) error( cudaErrorIllegalAddress): an illegal memory access was encountered
+... LAMMPS_NS::update_pair_forces(LAMMPS_NS::MLIAPDataKokkosDevice*, double*)
+```
+
+(the fault is reported at the next `cudaFree`, not in the faulting kernel). Energies, forces and the global virial
+(`compute pressure ... virial`) are unaffected, and no run of the paper requests a per-atom virial. Adding
+`compute pe/atom` to the input makes the crash disappear only because it raises `maxeatom`; that masks the defect and
+is not a fix. Upstream fixed it in lammps/lammps commit c5277f104 (4 Sep 2026, in `stable_30Sep2026`).
+`pair_mliap_kokkos_vatom_11Feb2026_backport.patch` is that two-line change against the reference source; apply it like
+the other patches:
+
+```bash
+patch -p1 < /path/to/mace-onegpu/lammps/pair_mliap_kokkos_vatom_11Feb2026_backport.patch
+```
+
+Reference source file before / after the patch: SHA256 `ed42506c80...` / `86b03ca307...`
+(`src/KOKKOS/pair_mliap_kokkos.cpp`). The defect was found and confirmed by disassembly of a deployed build in a
+collaborating project (per-atom stress of a Mg dislocation cell); see issue #1 of this repository.
+
 ## LAMMPS's own tests
 
 `ctest -R mliap` (build with `-D ENABLE_TESTING=ON`) gives the same result on the patched and on the unpatched build
@@ -120,4 +148,4 @@ ships an older one.
 
 ## License
 
-See `LICENSE-NOTE`. The patch is a derivative of LAMMPS and is distributed under GPL-2.0.
+See `LICENSE-NOTE`. The patches in this directory are derivatives of LAMMPS and are distributed under GPL-2.0.

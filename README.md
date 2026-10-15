@@ -254,7 +254,7 @@ without CUDA or without `MACE_ONEGPU_TEACHER`. Last run (H200, mace-torch 0.3.15
 
 ## License
 
-MIT (see `LICENSE`), except `lammps/mliap_data_kokkos.patch`. That patch is a derivative of LAMMPS and is
+MIT (see `LICENSE`), except the patches in `lammps/`. Those patches are derivatives of LAMMPS and are
 distributed under GPL-2.0 (see `lammps/LICENSE-NOTE`).
 
 ## Benchmarks and source data
