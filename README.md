@@ -287,3 +287,9 @@ The throughput figures report steady-state rates of short runs (compilation and 
 production runs, use the loop time that LAMMPS prints for a whole segment; it includes every neighbour-list rebuild
 and any communication overhead. In our 983,040-atom water runs the neighbour skin (2-4 A, rebuilds every 16-50
 steps) did not change the rate.
+
+The training sets, the DFT reference frames, the check records of every supervised run and the student models are on
+the Hugging Face Hub: dataset [shiqiao123/mace-foundation-model-supervision-data](https://huggingface.co/datasets/shiqiao123/mace-foundation-model-supervision-data)
+and models [shiqiao123/mace-foundation-model-supervision-models](https://huggingface.co/shiqiao123/mace-foundation-model-supervision-models).
+The dataset also holds a source archive of the code snapshot used for the paper (`code_snapshot/mace-onegpu-d572103.tar.gz`,
+identical to release `paper-d572103`).
