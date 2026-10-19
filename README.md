@@ -4,7 +4,7 @@
 
 This repository runs the MACE foundation model MACE-MPA-0 for **millions of atoms on one GPU**, with exactly the
 original MACE energies and forces. It contains the code for the paper *Foundation-Model Supervision of Distilled
-Potentials for Million-Atom Molecular Dynamics* (X. Liu, Y. Wang and L. Shen, 2026; preprint, see [Citation](#citation)).
+Potentials for Million-Atom Molecular Dynamics* (X. Liu, Y. Wang and L. Shen, arXiv:2610.23371, 2026; see [Citation](#citation)).
 
 The repository has three parts:
 
@@ -252,9 +252,21 @@ without CUDA or without `MACE_ONEGPU_TEACHER`. Last run (H200, mace-torch 0.3.15
 ## Citation
 
 Xiaoqing Liu, Yangshuai Wang and Lei Shen, *Foundation-Model Supervision of Distilled Potentials for Million-Atom
-Molecular Dynamics*, preprint (2026). The arXiv identifier and, later, the journal reference will be added here and in
-`CITATION.cff` as soon as they exist. The code snapshot used for the paper is commit `d572103` (GitHub release
+Molecular Dynamics*, arXiv:2610.23371 (2026), https://doi.org/10.48550/arXiv.2610.23371. The journal reference will be
+added when the paper is published. The code snapshot used for the paper is commit `d572103` (GitHub release
 `paper-d572103`; the same archive, `mace-onegpu-d572103.tar.gz`, is in the data repository).
+
+```bibtex
+@misc{liu2026supervision,
+  author        = {Liu, Xiaoqing and Wang, Yangshuai and Shen, Lei},
+  title         = {Foundation-Model Supervision of Distilled Potentials for Million-Atom Molecular Dynamics},
+  year          = {2026},
+  eprint        = {2610.23371},
+  archivePrefix = {arXiv},
+  primaryClass  = {physics.comp-ph},
+  doi           = {10.48550/arXiv.2610.23371}
+}
+```
 
 ## License
 
