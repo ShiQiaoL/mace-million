@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below (paper in preparation; the reference will be updated)."
+message: "If you use this software, please cite the paper (preferred-citation below, arXiv:2610.23371) and the software."
 title: "mace-million: exact memory-lean MACE evaluation and distilled students for million-atom MD on one GPU"
 type: software
 version: 0.1.3
@@ -24,3 +24,22 @@ keywords:
   - molecular dynamics
   - knowledge distillation
   - active learning
+preferred-citation:
+  type: article
+  title: "Foundation-Model Supervision of Distilled Potentials for Million-Atom Molecular Dynamics"
+  authors:
+    - family-names: Liu
+      given-names: Xiaoqing
+    - family-names: Wang
+      given-names: Yangshuai
+    - family-names: Shen
+      given-names: Lei
+  year: 2026
+  journal: "arXiv preprint"
+  doi: 10.48550/arXiv.2610.23371
+  url: https://arxiv.org/abs/2610.23371
+  identifiers:
+    - type: other
+      value: "arXiv:2610.23371"
+      description: "arXiv identifier"
+  notes: "The journal reference will be added when the paper is published. Code snapshot used for the paper: commit d572103 (release paper-d572103)."
