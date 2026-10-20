@@ -119,7 +119,27 @@ def main():
     dev = a.device
     dt = getattr(torch, a.dtype)
     bb, eb, meta = load_esen(a.checkpoint, dt, dev)
-    calc = meta["calc"]
+    _official = {}
+
+    def official_calc():
+        """fairchem's own OCPCalculator on the GPU, a separate model instance (the modules behind `bb` were moved to
+        `dev` and would otherwise be fed CPU tensors by the calculator's own pipeline)."""
+        if "calc" not in _official:
+            from fairchem.core.common.relaxation.ase_utils import OCPCalculator
+
+            _official["calc"] = OCPCalculator(checkpoint_path=a.checkpoint, cpu=(dev == "cpu"), seed=0)
+        return _official["calc"]
+
+    def official_forces(atoms):
+        """Forces, energy and wall time of the official evaluation (second call timed; the first warms up)."""
+        at = atoms.copy()
+        at.calc = official_calc()
+        f = at.get_forces()
+        at.calc.reset()
+        _sync(); t0 = time.perf_counter()
+        f = at.get_forces()
+        _sync(); tt = time.perf_counter() - t0
+        return f, float(at.get_potential_energy()), tt
     print(f"eSEN: blocks={bb.num_layers} cutoff={bb.cutoff} lmax={bb.lmax} mmax={bb.mmax} sphere={bb.sphere_channels} "
           f"hidden={bb.hidden_channels} | dtype={a.dtype} device={dev}", flush=True)
 
@@ -150,14 +170,15 @@ def main():
         print(f"reference on the base cell ({a.dtype}): E={Eb:.6f} eV ({Eb / nb:.6f}/atom)  Fmax={float(Fb.abs().max()):.4f}  edges={nEb}",
               flush=True)
         if a.official:
-            at = base.copy()
-            at.calc = calc
-            f_off = torch.tensor(at.get_forces(), dtype=torch.float64, device=dev)
-            e_off = float(at.get_potential_energy())
-            d = f_off - Fb
-            print(f"OFFICIAL OCPCalculator (fp32, fairchem graph, same fixed frame) vs our fp64 reference: "
-                  f"dE={e_off - Eb:+.3e} eV  max|dF|={float(d.abs().max()):.3e}  RMS(dF)={math.sqrt(float((d * d).mean())):.3e} eV/A",
-                  flush=True)
+            try:
+                f_off, e_off, t_off = official_forces(base)
+                f_off = torch.tensor(f_off, dtype=torch.float64, device=dev)
+                d = f_off - Fb
+                print(f"OFFICIAL OCPCalculator (fp32, fairchem graph, same fixed frame) vs our fp64 reference: "
+                      f"dE={e_off - Eb:+.3e} eV  max|dF|={float(d.abs().max()):.3e}  RMS(dF)={math.sqrt(float((d * d).mean())):.3e} eV/A  "
+                      f"t={t_off:.3f}s ({nb / t_off:.3e} atom-step/s)", flush=True)
+            except Exception as e:                                  # keep the chunked check even if the official path fails
+                print(f"OFFICIAL OCPCalculator failed: {str(e).splitlines()[0][:160]}", flush=True)
         if a.check:
             big = base.repeat(tuple(a.rep))
             E, F, info = chunked(bb, eb, meta, big, dt, dev, a.chunk)
@@ -194,11 +215,7 @@ def main():
             if torch.cuda.is_available():
                 torch.cuda.reset_peak_memory_stats()
             try:
-                _sync(); t0 = time.perf_counter()
-                at = big.copy()
-                at.calc = calc                                   # the official evaluation: fairchem graph + full forward
-                f = at.get_forces()
-                _sync(); ts = time.perf_counter() - t0
+                f, e, ts = official_forces(big)                  # the official evaluation: fairchem graph + full forward
                 print(f"STOCK official reps={reps} N={len(big):,}: t={ts:.2f}s ({len(big) / ts:.3e} atom-step/s) "
                       f"peak={_peak() / GB:.2f} GB ({_peak() / len(big) / 1e3:.1f} kB/atom)  Fmax={float(np.abs(f).max()):.3f}", flush=True)
             except torch.cuda.OutOfMemoryError:
