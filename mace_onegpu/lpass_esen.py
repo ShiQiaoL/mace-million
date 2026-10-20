@@ -41,11 +41,14 @@ except ImportError:  # pragma: no cover
 
 # ----------------------------------------------------------------------------- deterministic edge frame
 # eSEN (like eSCN and EquiformerV2) rotates every edge into a local frame whose axis perpendicular to the edge is
-# chosen with torch.rand_like (fairchem.core.models.esen.common.rotation.init_edge_rot_mat). The network is only
-# approximately invariant to that choice, so the original evaluation is not deterministic: two calls on the same
-# configuration differ (measured below, see experimental/esen_exactness_cpu.py --frame random). We replace the random
-# vector by a constant (the alignment fall-backs of the original code remain), which makes energies and forces a
-# deterministic function of the geometry, identical in the full-graph and in the chunked evaluation.
+# chosen with torch.rand_like (fairchem.core.models.esen.common.rotation.init_edge_rot_mat). Whether the output
+# depends on that choice is a property of the activation: with the gate activation and the spectral atom-wise MLP of
+# eSEN-30M-OAM the network is invariant to rotations about the edge axis, and two calls agree to rounding (6e-15 eV/A
+# on 192 water atoms, float64; experimental/esen_exactness_cpu.py --frame random); with the S2-grid activation
+# (class default, mmax < lmax) it is not, and two calls on the same configuration differ visibly (0.1-0.3 eV/A for a
+# random-weight test model). We replace the random vector by a constant (the alignment fall-backs of the original code
+# remain), which makes every evaluation a deterministic function of the geometry; for eSEN-30M-OAM this changes
+# nothing beyond rounding.
 _FRAME_VEC = (0.3, 0.5, 0.8)
 
 
