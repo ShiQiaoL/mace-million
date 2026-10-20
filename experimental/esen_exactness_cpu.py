@@ -105,17 +105,24 @@ def main():
         meta = {k: meta[k] for k in ("rmsd", "mean", "refs")}
     else:
         bb, eb, meta = random_esen(a.seed, a.cutoff, dtype)
-    rng = np.random.default_rng(a.seed)
-    # random H/O mixture with a minimum separation of 1.0 A (random positions, rejection)
-    pos = []
-    while len(pos) < a.n:
-        p = rng.uniform(0, a.box, 3)
-        if all(np.linalg.norm((p - q + a.box / 2) % a.box - a.box / 2) > 1.0 for q in pos):
-            pos.append(p)
-    Z = rng.choice([1, 8], size=a.n, p=[2 / 3, 1 / 3])
-    atoms = Atoms(numbers=Z, positions=np.array(pos), cell=np.eye(3) * a.box, pbc=True)
+    if a.xyz:
+        from ase.io import read
+
+        atoms = read(a.xyz, index=a.frame)
+        atoms.set_pbc(True)
+        a.n = len(atoms)
+    else:
+        rng = np.random.default_rng(a.seed)
+        # random H/O mixture with a minimum separation of 1.0 A (random positions, rejection)
+        pos = []
+        while len(pos) < a.n:
+            p = rng.uniform(0, a.box, 3)
+            if all(np.linalg.norm((p - q + a.box / 2) % a.box - a.box / 2) > 1.0 for q in pos):
+                pos.append(p)
+        Z = rng.choice([1, 8], size=a.n, p=[2 / 3, 1 / 3])
+        atoms = Atoms(numbers=Z, positions=np.array(pos), cell=np.eye(3) * a.box, pbc=True)
     print(f"model: blocks={bb.num_layers} cutoff={bb.cutoff} lmax={bb.lmax} sphere={bb.sphere_channels} | cell {a.n} atoms, "
-          f"box {a.box} A, chunk {a.chunk}")
+          f"box {np.diag(atoms.get_cell()).round(3).tolist()} A, chunk {a.chunk}")
 
     t0 = time.perf_counter()
     E0, F0, nE0 = reference_full_graph(bb, eb, atoms, dtype, meta)
