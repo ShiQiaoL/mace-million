@@ -226,7 +226,7 @@ def main():
                 print(f"STOCK official reps={reps} N={len(big):,}: {str(e).splitlines()[0][:120]}", flush=True)
                 torch.cuda.empty_cache()
                 break
-            del big, at
+            del big
             torch.cuda.empty_cache()
 
 
