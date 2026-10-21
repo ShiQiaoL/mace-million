@@ -90,6 +90,8 @@ def main():
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--frame", default="fixed", choices=["fixed", "random"],
                     help="edge frame: fixed (deterministic, default) or fairchem's random vector")
+    ap.add_argument("--xyz", default=None, help="structure file (ASE-readable) instead of the random cell")
+    ap.add_argument("--frame-index", type=int, default=0, help="frame of --xyz to use")
     a = ap.parse_args()
     from ase import Atoms
 
@@ -108,7 +110,7 @@ def main():
     if a.xyz:
         from ase.io import read
 
-        atoms = read(a.xyz, index=a.frame)
+        atoms = read(a.xyz, index=a.frame_index)
         atoms.set_pbc(True)
         a.n = len(atoms)
     else:
