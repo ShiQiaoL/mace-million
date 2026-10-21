@@ -1,0 +1,7 @@
+MACE official ASE calculator: /home/svu/xqliu/software/mace-model/mace-mh-1.model head=omat_pbe dtype=float32 cueq=True | base 192 atoms
+OFFICIAL reps=[2, 2, 2] N=1,536: t=0.327s (4.702e+03 atom-step/s) peak=4.43 GB (2886.6 kB/atom) Fmax=2.122
+OFFICIAL reps=[3, 3, 3] N=5,184: t=0.901s (5.756e+03 atom-step/s) peak=14.72 GB (2840.1 kB/atom) Fmax=2.122
+OFFICIAL reps=[4, 4, 4] N=12,288: t=1.551s (7.924e+03 atom-step/s) peak=34.76 GB (2828.7 kB/atom) Fmax=2.122
+OFFICIAL reps=[5, 5, 5] N=24,000: t=1.476s (1.626e+04 atom-step/s) peak=67.79 GB (2824.7 kB/atom) Fmax=2.122
+OFFICIAL reps=[6, 6, 6] N=41,472: t=2.565s (1.617e+04 atom-step/s) peak=117.08 GB (2823.0 kB/atom) Fmax=2.122
+OFFICIAL reps=[7, 7, 7] N=65,856: OUT OF MEMORY

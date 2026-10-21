@@ -1,0 +1,25 @@
+job 678236.hopper-m-02 on hopper-22 started Tue Oct 20 05:55:31 PM +08 2026
+== throughput of the chunked evaluation, chunks of 2,048 receivers
+  [t_water64_4x4x4_N12288] rc=0 atom-steps/s=623.6 | Loop time of 394.124 on 1 procs for 20 steps with 12288 atoms 
+     per call (last 5): total 19.740s  forward 5.387s  backward 14.349s  peak 26.8 GB  nlocal 12288
+  [t_water64_6x6x6_N41472] rc=0 atom-steps/s=615.7 | Loop time of 673.568 on 1 procs for 10 steps with 41472 atoms 
+     per call (last 5): total 67.268s  forward 18.403s  backward 48.860s  peak 32.3 GB  nlocal 41472
+  [t_water64_8x8x8_N98304] rc=0 atom-steps/s=620.3 | Loop time of 792.387 on 1 procs for 5 steps with 98304 atoms 
+     per call (last 5): total 158.474s  forward 43.236s  backward 115.232s  peak 41.7 GB  nlocal 98304
+job finished Tue Oct 20 06:43:53 PM +08 2026
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			Resource Usage on 2026-10-20 18:43:54.127053:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	JobId: 678236.hopper-m-02
+	Project: CFP04-CF-019
+	Exit Status: 0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	NCPUs: Requested(12), Used(12)
+	CPU Time Used: 00:47:40
+	Memory: Requested(225gb), Used(4567752kb)
+	Vmem Used: 76648516kb
+	Walltime: Requested(02:00:00), Used(00:48:29)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	Execution Nodes Used: (hopper-22:ngpus=1:ncpus=12:mem=235929600kb)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	No GPU-related information available for this job.

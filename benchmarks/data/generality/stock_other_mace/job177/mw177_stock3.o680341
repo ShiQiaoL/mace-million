@@ -1,0 +1,54 @@
+job 680341.hopper-m-02 on hopper-18 started Wed Oct 21 03:11:05 PM +08 2026
+===== matpes_r2scan, stock fp32_fused in LAMMPS  (Wed Oct 21 03:11:05 PM +08 2026)
+  [cap_water64_4x4x4_N12288] rc=0 atom-steps/s=1.54e+05 | Loop time of 0.239323 on 1 procs for 3 steps with 12288 atoms 
+  [cap_water64_5x5x5_N24000] rc=0 atom-steps/s=1.691e+05 | Loop time of 0.425835 on 1 procs for 3 steps with 24000 atoms 
+  [cap_water64_6x6x6_N41472] rc=0 atom-steps/s=1.746e+05 | Loop time of 0.712624 on 1 procs for 3 steps with 41472 atoms 
+  [cap_water64_7x7x7_N65856] rc=0 atom-steps/s=1.754e+05 | Loop time of 1.1265 on 1 procs for 3 steps with 65856 atoms 
+  [cap_water64_8x8x7_N86016] rc=0 atom-steps/s=1.756e+05 | Loop time of 1.4695 on 1 procs for 3 steps with 86016 atoms 
+  [cap_water64_8x8x8_N98304] rc=1 atom-steps/s=- |  Error
+out of memory
+  [md_water64_8x8x7_N86016] rc=1 atom-steps/s=9.521e+04 | Loop time of 4.51719 on 1 procs for 5 steps with 86016 atoms Error
+out of memory
+  [md_water64_7x7x7_N65856] rc=0 atom-steps/s=6.547e+04 | Loop time of 30.1781 on 1 procs for 30 steps with 65856 atoms 
+===== matpes_r2scan, official ASE calculator standalone  (Wed Oct 21 03:23:04 PM +08 2026)
+MACE official ASE calculator: /home/svu/xqliu/software/mace-model/MACE-matpes-r2scan-0.model head=None dtype=float32 cueq=True | base 192 atoms
+OFFICIAL reps=[4, 4, 4] N=12,288: t=0.800s (1.537e+04 atom-step/s) peak=19.04 GB (1549.7 kB/atom) Fmax=1.744
+OFFICIAL reps=[5, 5, 5] N=24,000: t=1.730s (1.387e+04 atom-step/s) peak=37.08 GB (1545.1 kB/atom) Fmax=1.744
+OFFICIAL reps=[6, 6, 6] N=41,472: t=2.802s (1.480e+04 atom-step/s) peak=63.99 GB (1543.0 kB/atom) Fmax=1.744
+OFFICIAL reps=[7, 7, 7] N=65,856: t=3.378s (1.950e+04 atom-step/s) peak=101.56 GB (1542.2 kB/atom) Fmax=1.744
+OFFICIAL reps=[8, 8, 8] N=98,304: OUT OF MEMORY
+===== matpes_pbe, stock fp32_fused in LAMMPS  (Wed Oct 21 03:25:08 PM +08 2026)
+  [cap_water64_4x4x4_N12288] rc=0 atom-steps/s=1.545e+05 | Loop time of 0.23855 on 1 procs for 3 steps with 12288 atoms 
+  [cap_water64_5x5x5_N24000] rc=0 atom-steps/s=1.695e+05 | Loop time of 0.424754 on 1 procs for 3 steps with 24000 atoms 
+  [cap_water64_6x6x6_N41472] rc=0 atom-steps/s=1.753e+05 | Loop time of 0.709684 on 1 procs for 3 steps with 41472 atoms 
+  [cap_water64_7x7x7_N65856] rc=0 atom-steps/s=1.743e+05 | Loop time of 1.13347 on 1 procs for 3 steps with 65856 atoms 
+  [cap_water64_8x8x7_N86016] rc=0 atom-steps/s=1.739e+05 | Loop time of 1.48368 on 1 procs for 3 steps with 86016 atoms 
+  [cap_water64_8x8x8_N98304] rc=1 atom-steps/s=- |  Error
+out of memory
+  [md_water64_8x8x7_N86016] rc=1 atom-steps/s=9.495e+04 | Loop time of 4.52963 on 1 procs for 5 steps with 86016 atoms Error
+out of memory
+  [md_water64_7x7x7_N65856] rc=0 atom-steps/s=6.396e+04 | Loop time of 30.8908 on 1 procs for 30 steps with 65856 atoms 
+===== matpes_pbe, official ASE calculator standalone  (Wed Oct 21 03:36:53 PM +08 2026)
+MACE official ASE calculator: /home/svu/xqliu/software/mace-model/MACE-matpes-pbe-0.model head=None dtype=float32 cueq=True | base 192 atoms
+OFFICIAL reps=[4, 4, 4] N=12,288: t=0.797s (1.541e+04 atom-step/s) peak=19.04 GB (1549.7 kB/atom) Fmax=2.193
+OFFICIAL reps=[5, 5, 5] N=24,000: t=1.739s (1.380e+04 atom-step/s) peak=37.08 GB (1545.1 kB/atom) Fmax=2.193
+OFFICIAL reps=[6, 6, 6] N=41,472: t=2.817s (1.472e+04 atom-step/s) peak=63.99 GB (1543.0 kB/atom) Fmax=2.193
+OFFICIAL reps=[7, 7, 7] N=65,856: t=3.410s (1.931e+04 atom-step/s) peak=101.56 GB (1542.2 kB/atom) Fmax=2.193
+OFFICIAL reps=[8, 8, 8] N=98,304: OUT OF MEMORY
+job finished Wed Oct 21 03:38:58 PM +08 2026
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			Resource Usage on 2026-10-21 15:38:58.860105:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	JobId: 680341.hopper-m-02
+	Project: CFP04-CF-019
+	Exit Status: 0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	NCPUs: Requested(12), Used(12)
+	CPU Time Used: 00:25:56
+	Memory: Requested(225gb), Used(5410792kb)
+	Vmem Used: 521281916kb
+	Walltime: Requested(01:30:00), Used(00:27:59)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	Execution Nodes Used: (hopper-18:ngpus=1:ncpus=12:mem=235929600kb)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	No GPU-related information available for this job.

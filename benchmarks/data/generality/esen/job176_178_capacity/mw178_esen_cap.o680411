@@ -1,0 +1,29 @@
+job 680411.hopper-m-02 on hopper-18 started Wed Oct 21 03:39:10 PM +08 2026
+NVIDIA H200, 143771 MiB
+== 1: official evaluation boundary (fp32): 384, 768 atoms
+edge frame: fixed
+eSEN: blocks=10 cutoff=6.0 lmax=3 mmax=2 sphere=128 hidden=128 | dtype=float32 device=cuda
+STOCK official reps=[2, 1, 1] N=384: t=0.60s (6.365e+02 atom-step/s) peak=38.96 GB (101451.3 kB/atom)  Fmax=2.161
+STOCK official reps=[2, 2, 2] N=1,536: OUT OF MEMORY
+== 2: chunked fp32, chunk 1024: 393,216 / 589,824 / 786,432 atoms
+edge frame: fixed
+SCAN chunked float32 reps=[16, 16, 8] N=393,216: t=669.51s (5.873e+02 atom-step/s) peak=61.60 GB (156.66 kB/atom) reserved=83.57 GB resident=98.30 kB/atom E/atom=-4.853180
+SCAN chunked float32 reps=[16, 16, 12] N=589,824: t=1003.14s (5.880e+02 atom-step/s) peak=92.31 GB (156.50 kB/atom) reserved=112.93 GB resident=98.30 kB/atom E/atom=-4.853180
+SCAN chunked float32 reps=[16, 16, 16] N=786,432: t=1337.96s (5.878e+02 atom-step/s) peak=123.01 GB (156.42 kB/atom) reserved=146.67 GB resident=98.30 kB/atom E/atom=-4.853180
+job finished Wed Oct 21 04:29:55 PM +08 2026
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			Resource Usage on 2026-10-21 16:29:56.711387:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	JobId: 680411.hopper-m-02
+	Project: CFP04-CF-019
+	Exit Status: 0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	NCPUs: Requested(12), Used(12)
+	CPU Time Used: 00:50:18
+	Memory: Requested(225gb), Used(3489468kb)
+	Vmem Used: 163176696kb
+	Walltime: Requested(02:00:00), Used(00:50:51)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	Execution Nodes Used: (hopper-18:ngpus=1:ncpus=12:mem=235929600kb)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	No GPU-related information available for this job.

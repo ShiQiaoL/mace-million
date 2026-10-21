@@ -1,0 +1,17 @@
+{"step": 1, "nlocal": 192, "ntotal": 2298, "npairs": 17222, "full_graph": false, "t_total": 8.750828688964248, "forward": 0.40527437103446573, "backward": 0.4815405090339482, "peak_gb": 2.63700736}
+{"step": 2, "nlocal": 192, "ntotal": 2298, "npairs": 17210, "full_graph": false, "t_total": 0.5725229979725555, "forward": 0.1487183260032907, "backward": 0.4214088039007038, "peak_gb": 2.63700736}
+{"step": 3, "nlocal": 192, "ntotal": 2298, "npairs": 17204, "full_graph": false, "t_total": 0.5716895839432254, "forward": 0.14861774689052254, "backward": 0.42082552006468177, "peak_gb": 2.63700736}
+{"step": 4, "nlocal": 192, "ntotal": 2298, "npairs": 17224, "full_graph": false, "t_total": 0.5735588939860463, "forward": 0.14888826699461788, "backward": 0.4221407959703356, "peak_gb": 2.638702592}
+{"step": 5, "nlocal": 192, "ntotal": 2298, "npairs": 17232, "full_graph": false, "t_total": 0.5723536710720509, "forward": 0.14875125791877508, "backward": 0.4212119959993288, "peak_gb": 2.63905536}
+{"step": 6, "nlocal": 192, "ntotal": 2298, "npairs": 17238, "full_graph": false, "t_total": 0.5716991130029783, "forward": 0.1485029379837215, "backward": 0.4208699460141361, "peak_gb": 2.639425536}
+{"step": 7, "nlocal": 192, "ntotal": 2328, "npairs": 17238, "full_graph": false, "t_total": 0.57257518498227, "forward": 0.1483432260574773, "backward": 0.4217954649357125, "peak_gb": 2.642601984}
+{"step": 8, "nlocal": 192, "ntotal": 2328, "npairs": 17242, "full_graph": false, "t_total": 0.5756866009905934, "forward": 0.1491647739894688, "backward": 0.424113727058284, "peak_gb": 2.642740736}
+{"step": 9, "nlocal": 192, "ntotal": 2328, "npairs": 17236, "full_graph": false, "t_total": 0.5723877489799634, "forward": 0.14875666901934892, "backward": 0.42125291493721306, "peak_gb": 2.642740736}
+{"step": 10, "nlocal": 192, "ntotal": 2328, "npairs": 17212, "full_graph": false, "t_total": 0.5734702469781041, "forward": 0.148699083016254, "backward": 0.4223862929502502, "peak_gb": 2.642740736}
+{"step": 11, "nlocal": 192, "ntotal": 2328, "npairs": 17210, "full_graph": false, "t_total": 0.5737670039525256, "forward": 0.14835528004914522, "backward": 0.42307672393508255, "peak_gb": 2.642740736}
+{"step": 12, "nlocal": 192, "ntotal": 2328, "npairs": 17222, "full_graph": false, "t_total": 0.5740633399691433, "forward": 0.14842292293906212, "backward": 0.42316102399490774, "peak_gb": 2.642740736}
+{"step": 13, "nlocal": 192, "ntotal": 2328, "npairs": 17190, "full_graph": false, "t_total": 0.5735797429224476, "forward": 0.14879639097489417, "backward": 0.4223027430707589, "peak_gb": 2.642740736}
+{"step": 14, "nlocal": 192, "ntotal": 2328, "npairs": 17202, "full_graph": false, "t_total": 0.5706943389959633, "forward": 0.14848363399505615, "backward": 0.4199082760605961, "peak_gb": 2.642740736}
+{"step": 15, "nlocal": 192, "ntotal": 2328, "npairs": 17226, "full_graph": false, "t_total": 0.5684995639603585, "forward": 0.14812925993464887, "backward": 0.41833118395879865, "peak_gb": 2.642740736}
+{"step": 16, "nlocal": 192, "ntotal": 2328, "npairs": 17240, "full_graph": false, "t_total": 0.5699997449992225, "forward": 0.14814916299656034, "backward": 0.4198291089851409, "peak_gb": 2.642740736}
+{"step": 17, "nlocal": 192, "ntotal": 2328, "npairs": 17222, "full_graph": false, "t_total": 0.5682947280583903, "forward": 0.14820502104703337, "backward": 0.41804876597598195, "peak_gb": 2.642740736}

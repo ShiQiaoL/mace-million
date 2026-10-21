@@ -1,0 +1,27 @@
+job 680340.hopper-m-02 on hopper-18 started Wed Oct 21 03:02:24 PM +08 2026
+NVIDIA H200, 143771 MiB
+== 1: official evaluation, capacity and throughput (fp32)
+edge frame: fixed
+eSEN: blocks=10 cutoff=6.0 lmax=3 mmax=2 sphere=128 hidden=128 | dtype=float32 device=cuda
+STOCK official reps=[1, 1, 1] N=192: t=0.40s (4.787e+02 atom-step/s) peak=19.69 GB (102551.2 kB/atom)  Fmax=2.161
+STOCK official reps=[2, 2, 2] N=1,536: OUT OF MEMORY
+== 2: chunked fp32, chunk 1024, 983,040 atoms (20x16x16) then 1,105,920 (20x18x16)
+edge frame: fixed
+SCAN chunked reps=[20, 16, 16] N=983,040: OUT OF MEMORY
+job finished Wed Oct 21 03:10:53 PM +08 2026
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			Resource Usage on 2026-10-21 15:10:54.545693:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	JobId: 680340.hopper-m-02
+	Project: CFP04-CF-019
+	Exit Status: 0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	NCPUs: Requested(12), Used(12)
+	CPU Time Used: 00:07:57
+	Memory: Requested(225gb), Used(3340800kb)
+	Vmem Used: 137852808kb
+	Walltime: Requested(02:00:00), Used(00:08:38)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	Execution Nodes Used: (hopper-18:ngpus=1:ncpus=12:mem=235929600kb)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	No GPU-related information available for this job.

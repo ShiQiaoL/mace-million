@@ -1,0 +1,47 @@
+job 677505.hopper-m-02 on hopper-18 started Tue Oct 20 01:50:50 PM +08 2026
+===== matpes_r2scan  head=default  (Tue Oct 20 01:50:50 PM +08 2026)
+}
+done -> /home/svu/xqliu/scratch/mace-water-memtest/runs/job172_stock_other_mace/matpes_r2scan/MACE-matpes-r2scan-0.variants.json
+  stock file: MACE-matpes-r2scan-0.fp32-mliap_lammps.pt
+  -- capacity: 3-step evaluations
+  [cap_water64_4x4x4_N12288] rc=0 atom-steps/s=9.287e+04 | Loop time of 0.396954 on 1 procs for 3 steps with 12288 atoms 
+  [cap_water64_5x5x5_N24000] rc=0 atom-steps/s=9.665e+04 | Loop time of 0.744948 on 1 procs for 3 steps with 24000 atoms 
+  [cap_water64_6x6x6_N41472] rc=1 atom-steps/s=- |  Error
+out of memory
+  -- MD throughput at the largest 3-step size that ran (water64_5x5x5_N24000), then one size smaller if MD does not fit
+  [md_water64_5x5x5_N24000] rc=0 atom-steps/s=7.865e+04 | Loop time of 9.15458 on 1 procs for 30 steps with 24000 atoms 
+===== matpes_pbe  head=default  (Tue Oct 20 01:55:01 PM +08 2026)
+}
+done -> /home/svu/xqliu/scratch/mace-water-memtest/runs/job172_stock_other_mace/matpes_pbe/MACE-matpes-pbe-0.variants.json
+  stock file: MACE-matpes-pbe-0.fp32-mliap_lammps.pt
+  -- capacity: 3-step evaluations
+  [cap_water64_4x4x4_N12288] rc=0 atom-steps/s=9.277e+04 | Loop time of 0.39736 on 1 procs for 3 steps with 12288 atoms 
+  [cap_water64_5x5x5_N24000] rc=0 atom-steps/s=9.674e+04 | Loop time of 0.744292 on 1 procs for 3 steps with 24000 atoms 
+  [cap_water64_6x6x6_N41472] rc=1 atom-steps/s=- |  Error
+out of memory
+  -- MD throughput at the largest 3-step size that ran (water64_5x5x5_N24000), then one size smaller if MD does not fit
+  [md_water64_5x5x5_N24000] rc=0 atom-steps/s=6.805e+04 | Loop time of 10.5801 on 1 procs for 30 steps with 24000 atoms 
+===== mh1  head=omat_pbe  (Tue Oct 20 01:58:42 PM +08 2026)
+}
+done -> /home/svu/xqliu/scratch/mace-water-memtest/runs/job172_stock_other_mace/mh1/mace-mh-1.variants.json
+  stock file: mace-mh-1.fp32-mliap_lammps.pt
+  -- capacity: 3-step evaluations
+/cm/local/apps/pbspro/var/spool/mom_priv/jobs/677505.hopper-m-02.SC: line 31: 2980423 Aborted                 timeout 1200 $LMP -in $REPO/inputs/in.water_scan.lmp -var data_file $data -var model_file $model -var elems "O H" -var run_steps $steps -var warmup 5 -var dt 0.001 -var skin 2.0 -var thermo_every 10 -var dump_forces 0 -log log_${tag}.lammps > lmp_${tag}.out 2>&1
+  [cap_water64_2x2x2_N1536] rc=134 atom-steps/s=- |  error
+job finished Tue Oct 20 01:59:17 PM +08 2026
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			Resource Usage on 2026-10-20 13:59:18.655126:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	JobId: 677505.hopper-m-02
+	Project: CFP04-CF-019
+	Exit Status: 0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	NCPUs: Requested(12), Used(12)
+	CPU Time Used: 00:06:26
+	Memory: Requested(225gb), Used(4594564kb)
+	Vmem Used: 250090640kb
+	Walltime: Requested(02:00:00), Used(00:08:35)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	Execution Nodes Used: (hopper-18:ngpus=1:ncpus=12:mem=235929600kb)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	No GPU-related information available for this job.

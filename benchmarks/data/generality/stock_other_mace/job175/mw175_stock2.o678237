@@ -1,0 +1,40 @@
+job 678237.hopper-m-02 on hopper-22 started Tue Oct 20 06:44:08 PM +08 2026
+===== matpes_r2scan, stock fp32_fused  (Tue Oct 20 06:44:08 PM +08 2026)
+done -> /home/svu/xqliu/scratch/mace-water-memtest/runs/job175_stock_other_mace2/matpes_r2scan/MACE-matpes-r2scan-0.variants.json
+  -- capacity: 3-step evaluations
+  [cap_water64_4x4x4_N12288] rc=1 atom-steps/s=- |  Error
+===== matpes_pbe, stock fp32_fused  (Tue Oct 20 06:44:57 PM +08 2026)
+done -> /home/svu/xqliu/scratch/mace-water-memtest/runs/job175_stock_other_mace2/matpes_pbe/MACE-matpes-pbe-0.variants.json
+  -- capacity: 3-step evaluations
+  [cap_water64_4x4x4_N12288] rc=1 atom-steps/s=- |  Error
+===== MACE-MH-1 (head omat_pbe) and MACE-MPA-0 through the official ASE calculator, standalone  (Tue Oct 20 06:45:27 PM +08 2026)
+MACE official ASE calculator: /home/svu/xqliu/software/mace-model/mace-mh-1.model head=omat_pbe dtype=float32 cueq=True | base 192 atoms
+OFFICIAL reps=[2, 2, 2] N=1,536: t=0.327s (4.702e+03 atom-step/s) peak=4.43 GB (2886.6 kB/atom) Fmax=2.122
+OFFICIAL reps=[3, 3, 3] N=5,184: t=0.901s (5.756e+03 atom-step/s) peak=14.72 GB (2840.1 kB/atom) Fmax=2.122
+OFFICIAL reps=[4, 4, 4] N=12,288: t=1.551s (7.924e+03 atom-step/s) peak=34.76 GB (2828.7 kB/atom) Fmax=2.122
+OFFICIAL reps=[5, 5, 5] N=24,000: t=1.476s (1.626e+04 atom-step/s) peak=67.79 GB (2824.7 kB/atom) Fmax=2.122
+OFFICIAL reps=[6, 6, 6] N=41,472: t=2.565s (1.617e+04 atom-step/s) peak=117.08 GB (2823.0 kB/atom) Fmax=2.122
+OFFICIAL reps=[7, 7, 7] N=65,856: OUT OF MEMORY
+MACE official ASE calculator: /home/svu/xqliu/software/mace-model/mace-mpa-0-medium.model head=None dtype=float32 cueq=True | base 192 atoms
+OFFICIAL reps=[4, 4, 4] N=12,288: t=0.801s (1.533e+04 atom-step/s) peak=19.04 GB (1549.7 kB/atom) Fmax=2.166
+OFFICIAL reps=[5, 5, 5] N=24,000: t=1.773s (1.354e+04 atom-step/s) peak=37.08 GB (1545.1 kB/atom) Fmax=2.166
+OFFICIAL reps=[6, 6, 6] N=41,472: t=2.852s (1.454e+04 atom-step/s) peak=63.99 GB (1543.0 kB/atom) Fmax=2.166
+OFFICIAL reps=[7, 7, 7] N=65,856: t=3.401s (1.936e+04 atom-step/s) peak=101.56 GB (1542.2 kB/atom) Fmax=2.166
+OFFICIAL reps=[8, 8, 8] N=98,304: OUT OF MEMORY
+job finished Tue Oct 20 06:49:42 PM +08 2026
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			Resource Usage on 2026-10-20 18:49:43.677400:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	JobId: 678237.hopper-m-02
+	Project: CFP04-CF-019
+	Exit Status: 0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	NCPUs: Requested(12), Used(12)
+	CPU Time Used: 00:04:22
+	Memory: Requested(225gb), Used(5776024kb)
+	Vmem Used: 357895668kb
+	Walltime: Requested(02:00:00), Used(00:05:44)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	Execution Nodes Used: (hopper-22:ngpus=1:ncpus=12:mem=235929600kb)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	No GPU-related information available for this job.

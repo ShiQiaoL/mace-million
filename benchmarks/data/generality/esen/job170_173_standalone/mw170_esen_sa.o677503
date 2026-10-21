@@ -1,0 +1,34 @@
+job 677503.hopper-m-02 on hopper-27 started Tue Oct 20 01:15:42 PM +08 2026
+NVIDIA H200, 143771 MiB
+== 1-3: noise, official cross-check, replica check 4x4x4 (fp64, chunk 2048)
+edge frame: fixed
+eSEN: blocks=10 cutoff=6.0 lmax=3 mmax=2 sphere=128 hidden=128 | dtype=float64 device=cuda
+NOISE (random edge frame, float64, 192 atoms): two calls differ by max|dF|=4.663e-15 RMS(dF)=7.718e-16 eV/A  |dE|=1.137e-13 eV  (|F|max 2.161)
+reference on the base cell (float64): E=-931.810595 eV (-4.853180/atom)  Fmax=2.1608  edges=17222
+== 3b: replica check in fp32 (production precision)
+CHUNKED [4, 4, 4] N=12,288 edges=1,102,208: t=19.33s (6.355e+02 atom-step/s) peak=47.60 GB (3873.6 kB/atom) resident=98.30 kB/atom
+CHECK vs the original model on the 192-atom base cell: dE/atom=+1.987e-07 eV  max|dF|=1.348e-04  RMS(dF)=1.484e-05 eV/A  (all 12,288 atoms)
+== 4: capacity scan, chunked fp32
+SCAN chunked float32 reps=[4, 4, 4] N=12,288: t=19.46s (6.314e+02 atom-step/s) peak=93.28 GB (7590.77 kB/atom) resident=98.30 kB/atom E/atom=-4.853180
+SCAN chunked float32 reps=[8, 8, 8] N=98,304: t=154.98s (6.343e+02 atom-step/s) peak=103.48 GB (1052.65 kB/atom) resident=98.30 kB/atom E/atom=-4.853180
+SCAN chunked float32 reps=[10, 10, 10] N=192,000: t=302.38s (6.350e+02 atom-step/s) peak=114.30 GB (595.31 kB/atom) resident=98.30 kB/atom E/atom=-4.853180
+SCAN chunked reps=[13, 13, 13] N=421,824: OUT OF MEMORY
+== 5: capacity of the original (official) evaluation, fp32
+STOCK official reps=[2, 2, 2] N=1,536: Expected all tensors to be on the same device, but found at least two devices, cpu and cuda:0! (when checking argument f
+job finished Tue Oct 20 01:28:17 PM +08 2026
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			Resource Usage on 2026-10-20 13:28:19.497928:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	JobId: 677503.hopper-m-02
+	Project: CFP04-CF-019
+	Exit Status: 0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	NCPUs: Requested(12), Used(12)
+	CPU Time Used: 00:11:57
+	Memory: Requested(225gb), Used(9183876kb)
+	Vmem Used: 159697220kb
+	Walltime: Requested(02:00:00), Used(00:12:41)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	Execution Nodes Used: (hopper-27:ngpus=1:ncpus=12:mem=235929600kb)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	No GPU-related information available for this job.
