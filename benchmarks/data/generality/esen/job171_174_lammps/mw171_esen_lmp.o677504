@@ -1,0 +1,170 @@
+job 677504.hopper-m-02 on hopper-27 started Tue Oct 20 01:28:29 PM +08 2026
+== 1: model file and fp64 reference (192 atoms)
+INFO:root:amp: false
+cmd:
+  checkpoint_dir: /scratch/xqliu/mace-water-memtest/runs/job171_esen_lammps/checkpoints/2026-10-20-13-28-32
+  commit: core:None,experimental:NA
+  identifier: ''
+  logs_dir: /scratch/xqliu/mace-water-memtest/runs/job171_esen_lammps/logs/wandb/2026-10-20-13-28-32
+  print_every: 100
+  results_dir: /scratch/xqliu/mace-water-memtest/runs/job171_esen_lammps/results/2026-10-20-13-28-32
+  seed: null
+  timestamp_id: 2026-10-20-13-28-32
+  version: 1.10.0
+dataset:
+  a2g_args:
+    r_energy: true
+    r_forces: true
+    r_stress: true
+  format: ase_db
+  metadata_path: ''
+  transforms:
+    element_references: ''
+    normalizer:
+      energy:
+        mean: 0.0
+        stdev: 0.6274358
+      forces:
+        mean: 0.0
+        stdev: 0.6274358
+      stress:
+        mean: 0.0
+        stdev: 0.6274358
+evaluation_metrics:
+  metrics:
+    energy:
+    - mae
+    - per_atom_mae
+    forces:
+    - mae
+    - cosine_similarity
+    stress:
+    - mae
+  primary_metric: forces_mae
+gp_gpus: null
+gpus: 0
+logger: wandb
+loss_functions:
+- energy:
+    coefficient: 20
+    fn: per_atom_mae
+- forces:
+    coefficient: 20
+    fn: l2mae
+- stress:
+    coefficient: 5
+    fn: mae
+model:
+  backbone:
+    act_type: gate
+    cutoff: 6.0
+    direct_forces: false
+    distance_function: gaussian
+    edge_channels: 128
+    hidden_channels: 128
+    lmax: 3
+    max_neighbors: 300
+    max_num_elements: 100
+    mlp_type: spectral
+    mmax: 2
+    model: esen_backbone
+    norm_type: rms_norm_sh
+    num_distance_basis: 64
+    num_layers: 10
+    otf_graph: true
+    regress_forces: true
+    regress_stress: true
+    sphere_channels: 128
+    use_envelope: true
+    use_pbc: true
+    use_pbc_single: true
+  heads:
+    mptrj:
+      module: esen_mlp_efs_head
+  name: hydra
+  otf_graph: true
+  pass_through_head_outputs: true
+optim:
+  batch_size: 4
+  clip_grad_norm: 100
+  ema_decay: 0.999
+  eval_batch_size: 4
+  eval_every: 5000
+  load_balancing: atoms
+  lr_initial: 0.0004
+  max_epochs: 1
+  num_workers: 4
+  optimizer: AdamW
+  optimizer_params:
+    weight_decay: 0.001
+  scheduler: LambdaLR
+  scheduler_params:
+    epochs: 85271
+    lambda_type: cosine
+    lr: 0.0004
+    lr_min_factor: 0.1
+    warmup_epochs: 8527
+    warmup_factor: 0.2
+outputs:
+  energy:
+    level: system
+    property: energy
+  forces:
+    eval_on_free_atoms: true
+    level: atom
+    property: forces
+    train_on_free_atoms: true
+  stress:
+    level: system
+    property: stress
+relax_dataset: {}
+slurm: {}
+task: {}
+test_dataset: {}
+trainer: ocp
+val_dataset: {}
+
+INFO:root:Loading model: hydra
+INFO:root:Loaded HydraModel with 30161153 parameters.
+INFO:root:Loading checkpoint in inference-only mode, not loading keys associated with trainer state!
+load_esen: esen_30m_oam.pt blocks=10 cutoff=6.0 max_neighbors=300 lmax=3 mmax=2 sphere=128 hidden=128 | energy rmsd=0.627436 mean=0 element refs=yes
+saved esen_oam.lpass.pt: /scratch/xqliu/mace-water-memtest/external_models/esen_30m_oam.pt  elements=['O', 'H']  r_cut=6.0  chunk=8192  dtype=float32
+edge frame: fixed
+reference (float64): N=192 E=-931.810595 eV  Fmax=2.1608 eV/A  edges=17222 -> ref192.npz
+== 2: parity, 192 atoms (chunked), forces at step 0 vs the fp64 reference
+  [parity] rc=0 atom-steps/s=335.2 | Loop time of 5.72872 on 1 procs for 10 steps with 192 atoms 
+     per call (last 10): total 0.572s  forward 0.149s  backward 0.421s  full 0.000s  peak 2.6 GB
+RMS(dF) = 8.241e-06 eV/A   max|dF| = 7.490e-05 eV/A   rel = 9.789e-06
+worst atom index (0-based, sorted by id) = 27: Fa=[0.71352781 0.5105322  1.57563811] Fb=[0.71358599 0.51050737 1.57571301]
+== 3: throughput of the chunked evaluation (5 warm-up + 20 timed steps)
+  [t_water64_4x4x4_N12288] rc=0 atom-steps/s=636 | Loop time of 386.413 on 1 procs for 20 steps with 12288 atoms 
+     per call (last 10): total 19.355s  forward 5.348s  backward 14.004s  full 0.000s  peak 95.6 GB
+  [t_water64_6x6x6_N41472] rc=1 atom-steps/s=635.8 | Loop time of 326.158 on 1 procs for 5 steps with 41472 atoms ERROR
+     per call (last 6): total 66.782s  forward 18.038s  backward 47.248s  full 0.000s  peak 101.0 GB
+  [t_water64_20x16x16_N983040] rc=1 atom-steps/s=- |  Error
+out of memory
+== 4: stock full-graph path (MACE3P_ESEN_FULL=1): parity, throughput and the out-of-memory size
+  [full_parity] rc=0 atom-steps/s=449.9 | Loop time of 4.268 on 1 procs for 10 steps with 192 atoms 
+     per call (last 10): total 0.426s  forward 0.000s  backward 0.000s  full 0.422s  peak 17.2 GB
+worst atom index (0-based, sorted by id) = 38: Fa=[ 2.52787988 -0.02974983 -0.83058223] Fb=[ 1.02898857  0.71865188 -0.73979399]
+  [full_water64_2x2x2_N1536] rc=0 atom-steps/s=822.3 | Loop time of 18.6787 on 1 procs for 10 steps with 1536 atoms 
+     per call (last 10): total 1.866s  forward 0.000s  backward 0.000s  full 1.863s  peak 129.6 GB
+  [full_water64_3x3x3_N5184] rc=1 atom-steps/s=- |  Error
+out of memory
+job finished Tue Oct 20 01:49:11 PM +08 2026
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			Resource Usage on 2026-10-20 13:49:12.107750:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	JobId: 677504.hopper-m-02
+	Project: CFP04-CF-019
+	Exit Status: 0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	NCPUs: Requested(12), Used(12)
+	CPU Time Used: 00:19:34
+	Memory: Requested(225gb), Used(9022068kb)
+	Vmem Used: 203052476kb
+	Walltime: Requested(02:00:00), Used(00:20:48)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	Execution Nodes Used: (hopper-27:ngpus=1:ncpus=12:mem=235929600kb)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	No GPU-related information available for this job.

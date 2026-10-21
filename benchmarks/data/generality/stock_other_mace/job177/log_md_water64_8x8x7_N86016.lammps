@@ -1,0 +1,156 @@
+LAMMPS (11 Feb 2026 - Development)
+KOKKOS mode with Kokkos version 5.0.2 is enabled
+  using double precision
+  using view layout = legacy
+  will use up to 1 GPU(s) per node
+  using 1 OpenMP thread(s) per MPI task
+package kokkos
+package kokkos newton on neigh half
+# MACE-MPA-0 / liquid water / ML-IAP memory-scan input.
+# All knobs come from -var on the command line:
+#   data_file    LAMMPS data file (atom_style atomic, type 1 = O, type 2 = H, Masses section present)
+#   model_file   converted ML-IAP model (.pt)
+#   run_steps    0 -> one force call (setup) only; N -> N MD steps
+#   skin         neighbor skin in Angstrom (LAMMPS default for units metal is 2.0)
+#   scale        isotropic box scale factor applied with remap (1.0 = as read; density ~ 1/scale^3)
+#   dump_forces  0 -> no dump; k -> dump per-atom forces every k steps (parity checks)
+#   thermo_every thermo output interval
+#   seed, temp   velocity initialisation
+#   dt           timestep in ps (default 0.0005 = 0.5 fs)
+#   rep          replicate the box rep x rep x rep after reading (default 1)
+# index-style so that "-var data_file ..." on the command line takes precedence (a later
+# "variable ... index" for an existing variable is ignored; "string" style would error out)
+variable        elems        index "O H"
+variable data_file    index  water64_2x2x2_N1536.data
+variable model_file   index  model.pt
+variable run_steps    index  0
+variable skin         index  2.0
+variable scale        index  1.0
+variable dump_forces  index  0
+variable thermo_every index  1
+variable seed         index  12345
+variable temp         index  300.0
+variable dt           index  0.0005
+variable rep          index  1
+variable warmup       index  0
+variable repx         index  ${rep}
+variable repx         index  1
+variable repy         index  ${rep}
+variable repy         index  1
+variable repz         index  ${rep}
+variable repz         index  1
+
+units           metal
+boundary        p p p
+atom_style      atomic
+atom_modify     map yes
+newton          on
+
+read_data       ${data_file}
+read_data       /home/svu/xqliu/scratch/mace-water-memtest/structures/water64_8x8x7_N86016.data
+Reading data file ...
+  orthogonal box = (0 0 0) to (99.3104 99.3104 86.8966)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  86016 atoms
+  read_data CPU = 0.220 seconds
+if "${repx} > 1 || ${repy} > 1 || ${repz} > 1" then "replicate ${repx} ${repy} ${repz} bbox"
+
+if "${scale} != 1.0" then     "change_box all x scale ${scale} y scale ${scale} z scale ${scale} remap"
+
+pair_style      mliap unified ${model_file} 0
+pair_style      mliap unified /home/svu/xqliu/scratch/mace-water-memtest/runs/job175_stock_other_mace2/matpes_r2scan/MACE-matpes-r2scan-0.fp32_fused-mliap_lammps.pt 0
+pair_coeff      * * ${elems}
+pair_coeff      * * O H
+
+neighbor        ${skin} bin
+neighbor        2.0 bin
+neigh_modify    every 1 delay 0 check yes
+
+timestep        ${dt}
+timestep        0.001
+velocity        all create ${temp} ${seed} mom yes rot yes dist gaussian
+velocity        all create 300.0 ${seed} mom yes rot yes dist gaussian
+velocity        all create 300.0 12345 mom yes rot yes dist gaussian
+fix             int all nve
+
+thermo          ${thermo_every}
+thermo          10
+thermo_style    custom step atoms temp pe ke etotal press vol density cpu
+thermo_modify   flush yes
+
+if "${dump_forces} > 0" then     "dump f all custom ${dump_forces} forces.dump id type x y z fx fy fz"     "dump_modify f sort id format float %20.12e"
+
+if "${warmup} > 0" then "run ${warmup}"
+run ${warmup}
+run 5
+
+CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE
+
+Your simulation uses code contributions which should be cited:
+
+- KOKKOS package: https://doi.org/10.1145/3731599.3767498
+
+@inproceedings{Johansson25,
+ author = {A. Johansson and E. Weinberg and C. Trott and M. McCarthy and S. Moore},
+ title = {{LAMMPS-KOKKOS}: {P}erformance Portable Molecular Dynamics Across Exascale Architectures},
+ year = 2025,
+ booktitle = {Proceedings of the SC '25 Workshops of the International Conference for High Performance Computing,
+  Networking, Storage and Analysis},
+ pages = {1217–1232},
+}
+
+CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE
+
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 8
+  ghost atom cutoff = 8
+  binsize = 8, bins = 13 13 11
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair mliap/kk, perpetual
+      attributes: full, newton on, kokkos_device
+      pair build: full/bin/kk/device
+      stencil: full/bin/3d
+      bin: kk/device
+Per MPI rank memory allocation (min/avg/max) = 3.099e+06 | 3.099e+06 | 3.099e+06 Mbytes
+   Step        Atoms         Temp          PotEng         KinEng         TotEng         Press          Volume        Density          CPU      
+         0       86016   300           -452372.75      3335.4934     -449037.26      33068.937      857022.54      1.0008041      0            
+         5       86016   268.57356     -451979.9       2986.0845     -448993.81     -33946.681      857022.54      1.0008041      4.5171135    
+Loop time of 4.51719 on 1 procs for 5 steps with 86016 atoms
+
+Performance: 0.096 ns/day, 250.955 hours/ns, 1.107 timesteps/s, 95.210 katom-step/s
+98.1% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 4.5134     | 4.5134     | 4.5134     |   0.0 | 99.92
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0.00091114 | 0.00091114 | 0.00091114 |   0.0 |  0.02
+Output  | 0.00036213 | 0.00036213 | 0.00036213 |   0.0 |  0.01
+Modify  | 0.00092674 | 0.00092674 | 0.00092674 |   0.0 |  0.02
+Other   |            | 0.001582   |            |       |  0.04
+
+Nlocal:          86016 ave       86016 max       86016 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:          51144 ave       51144 max       51144 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:              0 ave           0 max           0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+FullNghs:   1.8368e+07 ave  1.8368e+07 max  1.8368e+07 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 18368000
+Ave neighs/atom = 213.54167
+Neighbor list builds = 0
+Dangerous builds = 0
+run             ${run_steps}
+run             30
+Per MPI rank memory allocation (min/avg/max) = 3.099e+06 | 3.099e+06 | 3.099e+06 Mbytes
+   Step        Atoms         Temp          PotEng         KinEng         TotEng         Press          Volume        Density          CPU      
+         5       86016   268.57356     -451979.9       2986.0845     -448993.81     -33946.681      857022.54      1.0008041      0            
+        10       86016   330.68285     -452678.34      3676.6349     -449001.71      26309.41       857022.54      1.0008041      2.455934     
+ERROR: Running mliappy unified compute_forces failure. (src/lammps-nosync/src/KOKKOS/mliap_unified_kokkos.cpp:82)
+Last input line: run ${run_steps}

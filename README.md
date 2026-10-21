@@ -201,6 +201,22 @@ to 983,040 water atoms (23-GB peak at 983,040; e3nn backend: 1.3e4, 39 GB). Seve
 reaches 5.5-9.5e4 atom-steps/s and at most 98,304 atoms on the H200. None of the kernels of the MACE fast path were
 ported to the SevenNet path.
 
+**eSEN (equivariant transformer, fairchem-core 1.10).** `mace_onegpu/lpass_esen.py` applies the same L-layer schedule to
+eSEN checkpoints (eSEN-30M-OAM: ten blocks with SO(2) convolutions plus the edge-degree embedding = 11 message layers,
+22 sweeps). It runs in a separate environment (Python 3.11, torch 2.5.1, `fairchem-core==1.10.0` installed with
+`--no-deps` on that torch, `scipy<1.15`), put first on `PYTHONPATH` inside LAMMPS as for SevenNet. The original code
+draws a random per-edge frame; `install_edge_frame()` fixes it (the released model is invariant to it to rounding, so
+nothing changes but reproducibility). Measured on one H200 (water): the chunked evaluation reproduces the original forces
+to 4.5e-13 eV/A (fp64, 12,288-atom replica) and 7.5e-5 eV/A in LAMMPS (fp32); it keeps 98 kB/atom resident, runs
+98,304 atoms in LAMMPS at 42 GB and 6.2e2 atom-steps/s, whereas fairchem's OCPCalculator runs out of memory at 1,536
+atoms and the same wrapper without chunking (`MACE3P_ESEN_FULL=1`) at 5,184.
+
+```bash
+python scripts/make_lpass_esen_model.py esen_30m_oam.pt --elements O H --out esen_oam.lpass.pt --chunk 2048
+python experimental/esen_exactness_cpu.py --checkpoint esen_30m_oam.pt --xyz water.extxyz --chunk 64 --rep 1   # CPU, fp64
+python experimental/esen_lpass.py --checkpoint esen_30m_oam.pt --base water64_1x1x1.extxyz --rep 4 4 4 --check --official
+```
+
 ## Students and on-the-fly supervision
 
 The teacher (MACE-MPA-0) is exact but slow. A small MACE student (for example 16x0e+16x1o, l=2, correlation 2,

@@ -1,0 +1,14 @@
+{"step": 1, "nlocal": 41472, "ntotal": 74248, "npairs": 3719952, "full_graph": false, "t_total": 77.48404280096292, "forward": 18.626001932658255, "backward": 48.854513295926154, "peak_gb": 32.328431616}
+{"step": 2, "nlocal": 41472, "ntotal": 74248, "npairs": 3717420, "full_graph": false, "t_total": 67.20656410045922, "forward": 18.361944399774075, "backward": 48.840590354055166, "peak_gb": 32.328431616}
+{"step": 3, "nlocal": 41472, "ntotal": 74248, "npairs": 3715998, "full_graph": false, "t_total": 67.20816591195762, "forward": 18.39589732326567, "backward": 48.80831437930465, "peak_gb": 32.328431616}
+{"step": 4, "nlocal": 41472, "ntotal": 74412, "npairs": 3715998, "full_graph": false, "t_total": 67.2140383720398, "forward": 18.373392975889146, "backward": 48.83600970264524, "peak_gb": 32.328431616}
+{"step": 5, "nlocal": 41472, "ntotal": 74412, "npairs": 3716898, "full_graph": false, "t_total": 67.22655629552901, "forward": 18.393345735035837, "backward": 48.828765228390694, "peak_gb": 32.328431616}
+{"step": 6, "nlocal": 41472, "ntotal": 74412, "npairs": 3717846, "full_graph": false, "t_total": 67.27083679009229, "forward": 18.394435708411038, "backward": 48.871227693744004, "peak_gb": 32.331172864}
+{"step": 7, "nlocal": 41472, "ntotal": 74412, "npairs": 3718276, "full_graph": false, "t_total": 67.30706115346402, "forward": 18.42470487486571, "backward": 48.87763388175517, "peak_gb": 32.333582336}
+{"step": 8, "nlocal": 41472, "ntotal": 74412, "npairs": 3718258, "full_graph": false, "t_total": 67.31922749988735, "forward": 18.41752022691071, "backward": 48.89768557436764, "peak_gb": 32.333582336}
+{"step": 9, "nlocal": 41472, "ntotal": 74412, "npairs": 3717608, "full_graph": false, "t_total": 68.084521939978, "forward": 18.388230516575277, "backward": 49.670166437514126, "peak_gb": 32.333582336}
+{"step": 10, "nlocal": 41472, "ntotal": 74412, "npairs": 3717274, "full_graph": false, "t_total": 67.26574232056737, "forward": 18.40049800928682, "backward": 48.86078051198274, "peak_gb": 32.333582336}
+{"step": 11, "nlocal": 41472, "ntotal": 74412, "npairs": 3716752, "full_graph": false, "t_total": 67.25167253986001, "forward": 18.392554412595928, "backward": 48.854702160693705, "peak_gb": 32.333582336}
+{"step": 12, "nlocal": 41472, "ntotal": 74412, "npairs": 3717114, "full_graph": false, "t_total": 67.23416507523507, "forward": 18.396216955967247, "backward": 48.83346195425838, "peak_gb": 32.333582336}
+{"step": 13, "nlocal": 41472, "ntotal": 74412, "npairs": 3717434, "full_graph": false, "t_total": 67.32296652160585, "forward": 18.41303220577538, "backward": 48.905406998470426, "peak_gb": 32.333582336}
+{"step": 14, "nlocal": 41472, "ntotal": 74412, "npairs": 3718562, "full_graph": false, "t_total": 67.26298518665135, "forward": 18.413322395645082, "backward": 48.84541625529528, "peak_gb": 32.333582336}

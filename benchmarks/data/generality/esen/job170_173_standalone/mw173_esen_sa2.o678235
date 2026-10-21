@@ -1,0 +1,41 @@
+job 678235.hopper-m-02 on hopper-22 started Tue Oct 20 05:40:44 PM +08 2026
+NVIDIA H200, 143771 MiB
+== 1: official cross-check + fp64 replica check 4x4x4 (chunk 1024)
+edge frame: fixed
+eSEN: blocks=10 cutoff=6.0 lmax=3 mmax=2 sphere=128 hidden=128 | dtype=float64 device=cuda
+reference on the base cell (float64): E=-931.810595 eV (-4.853180/atom)  Fmax=2.1608  edges=17222
+OFFICIAL OCPCalculator (fp32, fairchem graph, same fixed frame) vs our fp64 reference: dE=-1.356e-03 eV  max|dF|=1.101e-04  RMS(dF)=1.359e-05 eV/A  t=0.252s (7.623e+02 atom-step/s)
+  eSEN L=11 forward 7.7s backward 22.4s  resident X_0..X_L 196608 B/atom
+CHUNKED [4, 4, 4] N=12,288 edges=1,102,208: t=30.09s (4.084e+02 atom-step/s) peak=26.36 GB (2145.5 kB/atom) resident=196.61 kB/atom
+CHECK vs the original model on the 192-atom base cell: dE/atom=-8.882e-16 eV  max|dF|=4.481e-13  RMS(dF)=7.741e-14 eV/A  (all 12,288 atoms)
+== 2: fp32 scan, chunk 1024: 98,304 atoms, then the estimated capacity
+edge frame: fixed
+eSEN: blocks=10 cutoff=6.0 lmax=3 mmax=2 sphere=128 hidden=128 | dtype=float32 device=cuda
+SCAN chunked float32 reps=[8, 8, 8] N=98,304: t=168.82s (5.823e+02 atom-step/s) peak=23.07 GB (234.72 kB/atom) resident=98.30 kB/atom E/atom=-4.853180
+   working set ~ 13.4 GB -> estimated capacity 1207138 atoms (verify), then 1303709 (expect OOM)
+edge frame: fixed
+eSEN: blocks=10 cutoff=6.0 lmax=3 mmax=2 sphere=128 hidden=128 | dtype=float32 device=cuda
+SCAN chunked reps=[19, 19, 18] N=1,247,616: OUT OF MEMORY
+== 3: capacity and throughput of the official evaluation (fp32)
+edge frame: fixed
+eSEN: blocks=10 cutoff=6.0 lmax=3 mmax=2 sphere=128 hidden=128 | dtype=float32 device=cuda
+STOCK official reps=[1, 1, 1] N=192: t=0.45s (4.309e+02 atom-step/s) peak=19.69 GB (102551.2 kB/atom)  Fmax=2.161
+Traceback (most recent call last):
+UnboundLocalError: cannot access local variable 'at' where it is not associated with a value
+job finished Tue Oct 20 05:55:17 PM +08 2026
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			Resource Usage on 2026-10-20 17:55:18.543300:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	JobId: 678235.hopper-m-02
+	Project: CFP04-CF-019
+	Exit Status: 0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	NCPUs: Requested(12), Used(12)
+	CPU Time Used: 00:13:37
+	Memory: Requested(225gb), Used(3210008kb)
+	Vmem Used: 154721928kb
+	Walltime: Requested(02:00:00), Used(00:14:39)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	Execution Nodes Used: (hopper-22:ngpus=1:ncpus=12:mem=235929600kb)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	No GPU-related information available for this job.

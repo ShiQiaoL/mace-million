@@ -1,0 +1,134 @@
+edge frame: fixed
+INFO:root:amp: false
+cmd:
+  checkpoint_dir: /scratch/xqliu/mace-water-memtest/runs/job170_esen_standalone/checkpoints/2026-10-20-13-17-52
+  commit: core:None,experimental:NA
+  identifier: ''
+  logs_dir: /scratch/xqliu/mace-water-memtest/runs/job170_esen_standalone/logs/wandb/2026-10-20-13-17-52
+  print_every: 100
+  results_dir: /scratch/xqliu/mace-water-memtest/runs/job170_esen_standalone/results/2026-10-20-13-17-52
+  seed: null
+  timestamp_id: 2026-10-20-13-17-52
+  version: 1.10.0
+dataset:
+  a2g_args:
+    r_energy: true
+    r_forces: true
+    r_stress: true
+  format: ase_db
+  metadata_path: ''
+  transforms:
+    element_references: ''
+    normalizer:
+      energy:
+        mean: 0.0
+        stdev: 0.6274358
+      forces:
+        mean: 0.0
+        stdev: 0.6274358
+      stress:
+        mean: 0.0
+        stdev: 0.6274358
+evaluation_metrics:
+  metrics:
+    energy:
+    - mae
+    - per_atom_mae
+    forces:
+    - mae
+    - cosine_similarity
+    stress:
+    - mae
+  primary_metric: forces_mae
+gp_gpus: null
+gpus: 0
+logger: wandb
+loss_functions:
+- energy:
+    coefficient: 20
+    fn: per_atom_mae
+- forces:
+    coefficient: 20
+    fn: l2mae
+- stress:
+    coefficient: 5
+    fn: mae
+model:
+  backbone:
+    act_type: gate
+    cutoff: 6.0
+    direct_forces: false
+    distance_function: gaussian
+    edge_channels: 128
+    hidden_channels: 128
+    lmax: 3
+    max_neighbors: 300
+    max_num_elements: 100
+    mlp_type: spectral
+    mmax: 2
+    model: esen_backbone
+    norm_type: rms_norm_sh
+    num_distance_basis: 64
+    num_layers: 10
+    otf_graph: true
+    regress_forces: true
+    regress_stress: true
+    sphere_channels: 128
+    use_envelope: true
+    use_pbc: true
+    use_pbc_single: true
+  heads:
+    mptrj:
+      module: esen_mlp_efs_head
+  name: hydra
+  otf_graph: true
+  pass_through_head_outputs: true
+optim:
+  batch_size: 4
+  clip_grad_norm: 100
+  ema_decay: 0.999
+  eval_batch_size: 4
+  eval_every: 5000
+  load_balancing: atoms
+  lr_initial: 0.0004
+  max_epochs: 1
+  num_workers: 4
+  optimizer: AdamW
+  optimizer_params:
+    weight_decay: 0.001
+  scheduler: LambdaLR
+  scheduler_params:
+    epochs: 85271
+    lambda_type: cosine
+    lr: 0.0004
+    lr_min_factor: 0.1
+    warmup_epochs: 8527
+    warmup_factor: 0.2
+outputs:
+  energy:
+    level: system
+    property: energy
+  forces:
+    eval_on_free_atoms: true
+    level: atom
+    property: forces
+    train_on_free_atoms: true
+  stress:
+    level: system
+    property: stress
+relax_dataset: {}
+slurm: {}
+task: {}
+test_dataset: {}
+trainer: ocp
+val_dataset: {}
+
+INFO:root:Loading model: hydra
+INFO:root:Loaded HydraModel with 30161153 parameters.
+INFO:root:Loading checkpoint in inference-only mode, not loading keys associated with trainer state!
+load_esen: esen_30m_oam.pt blocks=10 cutoff=6.0 max_neighbors=300 lmax=3 mmax=2 sphere=128 hidden=128 | energy rmsd=0.627436 mean=0 element refs=yes
+eSEN: blocks=10 cutoff=6.0 lmax=3 mmax=2 sphere=128 hidden=128 | dtype=float32 device=cuda
+SCAN chunked float32 reps=[4, 4, 4] N=12,288: t=19.46s (6.314e+02 atom-step/s) peak=93.28 GB (7590.77 kB/atom) resident=98.30 kB/atom E/atom=-4.853180
+SCAN chunked float32 reps=[8, 8, 8] N=98,304: t=154.98s (6.343e+02 atom-step/s) peak=103.48 GB (1052.65 kB/atom) resident=98.30 kB/atom E/atom=-4.853180
+SCAN chunked float32 reps=[10, 10, 10] N=192,000: t=302.38s (6.350e+02 atom-step/s) peak=114.30 GB (595.31 kB/atom) resident=98.30 kB/atom E/atom=-4.853180
+SCAN chunked reps=[13, 13, 13] N=421,824: OUT OF MEMORY

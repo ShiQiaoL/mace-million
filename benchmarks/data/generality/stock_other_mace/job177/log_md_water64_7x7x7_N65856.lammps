@@ -1,0 +1,186 @@
+LAMMPS (11 Feb 2026 - Development)
+KOKKOS mode with Kokkos version 5.0.2 is enabled
+  using double precision
+  using view layout = legacy
+  will use up to 1 GPU(s) per node
+  using 1 OpenMP thread(s) per MPI task
+package kokkos
+package kokkos newton on neigh half
+# MACE-MPA-0 / liquid water / ML-IAP memory-scan input.
+# All knobs come from -var on the command line:
+#   data_file    LAMMPS data file (atom_style atomic, type 1 = O, type 2 = H, Masses section present)
+#   model_file   converted ML-IAP model (.pt)
+#   run_steps    0 -> one force call (setup) only; N -> N MD steps
+#   skin         neighbor skin in Angstrom (LAMMPS default for units metal is 2.0)
+#   scale        isotropic box scale factor applied with remap (1.0 = as read; density ~ 1/scale^3)
+#   dump_forces  0 -> no dump; k -> dump per-atom forces every k steps (parity checks)
+#   thermo_every thermo output interval
+#   seed, temp   velocity initialisation
+#   dt           timestep in ps (default 0.0005 = 0.5 fs)
+#   rep          replicate the box rep x rep x rep after reading (default 1)
+# index-style so that "-var data_file ..." on the command line takes precedence (a later
+# "variable ... index" for an existing variable is ignored; "string" style would error out)
+variable        elems        index "O H"
+variable data_file    index  water64_2x2x2_N1536.data
+variable model_file   index  model.pt
+variable run_steps    index  0
+variable skin         index  2.0
+variable scale        index  1.0
+variable dump_forces  index  0
+variable thermo_every index  1
+variable seed         index  12345
+variable temp         index  300.0
+variable dt           index  0.0005
+variable rep          index  1
+variable warmup       index  0
+variable repx         index  ${rep}
+variable repx         index  1
+variable repy         index  ${rep}
+variable repy         index  1
+variable repz         index  ${rep}
+variable repz         index  1
+
+units           metal
+boundary        p p p
+atom_style      atomic
+atom_modify     map yes
+newton          on
+
+read_data       ${data_file}
+read_data       /home/svu/xqliu/scratch/mace-water-memtest/structures/water64_7x7x7_N65856.data
+Reading data file ...
+  orthogonal box = (0 0 0) to (86.8966 86.8966 86.8966)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  65856 atoms
+  read_data CPU = 0.171 seconds
+if "${repx} > 1 || ${repy} > 1 || ${repz} > 1" then "replicate ${repx} ${repy} ${repz} bbox"
+
+if "${scale} != 1.0" then     "change_box all x scale ${scale} y scale ${scale} z scale ${scale} remap"
+
+pair_style      mliap unified ${model_file} 0
+pair_style      mliap unified /home/svu/xqliu/scratch/mace-water-memtest/runs/job175_stock_other_mace2/matpes_r2scan/MACE-matpes-r2scan-0.fp32_fused-mliap_lammps.pt 0
+pair_coeff      * * ${elems}
+pair_coeff      * * O H
+
+neighbor        ${skin} bin
+neighbor        2.0 bin
+neigh_modify    every 1 delay 0 check yes
+
+timestep        ${dt}
+timestep        0.001
+velocity        all create ${temp} ${seed} mom yes rot yes dist gaussian
+velocity        all create 300.0 ${seed} mom yes rot yes dist gaussian
+velocity        all create 300.0 12345 mom yes rot yes dist gaussian
+fix             int all nve
+
+thermo          ${thermo_every}
+thermo          10
+thermo_style    custom step atoms temp pe ke etotal press vol density cpu
+thermo_modify   flush yes
+
+if "${dump_forces} > 0" then     "dump f all custom ${dump_forces} forces.dump id type x y z fx fy fz"     "dump_modify f sort id format float %20.12e"
+
+if "${warmup} > 0" then "run ${warmup}"
+run ${warmup}
+run 5
+
+CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE
+
+Your simulation uses code contributions which should be cited:
+
+- KOKKOS package: https://doi.org/10.1145/3731599.3767498
+
+@inproceedings{Johansson25,
+ author = {A. Johansson and E. Weinberg and C. Trott and M. McCarthy and S. Moore},
+ title = {{LAMMPS-KOKKOS}: {P}erformance Portable Molecular Dynamics Across Exascale Architectures},
+ year = 2025,
+ booktitle = {Proceedings of the SC '25 Workshops of the International Conference for High Performance Computing,
+  Networking, Storage and Analysis},
+ pages = {1217–1232},
+}
+
+CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE
+
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 8
+  ghost atom cutoff = 8
+  binsize = 8, bins = 11 11 11
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair mliap/kk, perpetual
+      attributes: full, newton on, kokkos_device
+      pair build: full/bin/kk/device
+      stencil: full/bin/3d
+      bin: kk/device
+Per MPI rank memory allocation (min/avg/max) = 1.823e+06 | 1.823e+06 | 1.823e+06 Mbytes
+   Step        Atoms         Temp          PotEng         KinEng         TotEng         Press          Volume        Density          CPU      
+         0       65856   300           -346347.89      2553.7281     -343794.16      33068.922      656157.89      1.0008041      0            
+         5       65856   268.55573     -346047.05      2286.061      -343760.99     -33920.794      656157.89      1.0008041      3.9637846    
+Loop time of 3.96386 on 1 procs for 5 steps with 65856 atoms
+
+Performance: 0.109 ns/day, 220.214 hours/ns, 1.261 timesteps/s, 83.071 katom-step/s
+97.7% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 3.9603     | 3.9603     | 3.9603     |   0.0 | 99.91
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0.00089538 | 0.00089538 | 0.00089538 |   0.0 |  0.02
+Output  | 0.00029918 | 0.00029918 | 0.00029918 |   0.0 |  0.01
+Modify  | 0.00093935 | 0.00093935 | 0.00093935 |   0.0 |  0.02
+Other   |            | 0.001407   |            |       |  0.04
+
+Nlocal:          65856 ave       65856 max       65856 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:          43350 ave       43350 max       43350 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:              0 ave           0 max           0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+FullNghs:   1.4063e+07 ave  1.4063e+07 max  1.4063e+07 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 14063000
+Ave neighs/atom = 213.54167
+Neighbor list builds = 0
+Dangerous builds = 0
+run             ${run_steps}
+run             30
+Per MPI rank memory allocation (min/avg/max) = 1.823e+06 | 1.823e+06 | 1.823e+06 Mbytes
+   Step        Atoms         Temp          PotEng         KinEng         TotEng         Press          Volume        Density          CPU      
+         5       65856   268.55573     -346047.05      2286.061      -343760.99     -33920.793      656157.89      1.0008041      0            
+        10       65856   330.58494     -346580.92      2814.0802     -343766.84      26266.558      656157.89      1.0008041      1.8869734    
+        20       65856   310.16469     -346395.08      2640.2543     -343754.83      20648.964      656157.89      1.0008041      7.2827004    
+        30       65856   323.2687      -346521.36      2751.8012     -343769.56      10453.496      656157.89      1.0008041      28.278955    
+        35       65856   304.55339     -346359.62      2592.4884     -343767.14     -14602.361      656157.89      1.0008041      30.178067    
+Loop time of 30.1781 on 1 procs for 30 steps with 65856 atoms
+
+Performance: 0.086 ns/day, 279.427 hours/ns, 0.994 timesteps/s, 65.467 katom-step/s
+89.9% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 30.165     | 30.165     | 30.165     |   0.0 | 99.96
+Neigh   | 0.00075167 | 0.00075167 | 0.00075167 |   0.0 |  0.00
+Comm    | 0.0047167  | 0.0047167  | 0.0047167  |   0.0 |  0.02
+Output  | 0.0012361  | 0.0012361  | 0.0012361  |   0.0 |  0.00
+Modify  | 0.00090624 | 0.00090624 | 0.00090624 |   0.0 |  0.00
+Other   |            | 0.005624   |            |       |  0.02
+
+Nlocal:          65856 ave       65856 max       65856 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:          43851 ave       43851 max       43851 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:              0 ave           0 max           0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+FullNghs:  1.40884e+07 ave 1.40884e+07 max 1.40884e+07 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 14088410
+Ave neighs/atom = 213.92751
+Neighbor list builds = 1
+Dangerous builds = 0
+Total wall time: 0:01:59

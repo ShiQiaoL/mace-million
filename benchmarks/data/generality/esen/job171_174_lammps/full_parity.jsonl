@@ -1,0 +1,17 @@
+{"step": 1, "nlocal": 192, "ntotal": 2298, "npairs": 17222, "full_graph": true, "t_total": 8.808388517005369, "full": 0.7371275170007721, "peak_gb": 17.069746688}
+{"step": 2, "nlocal": 192, "ntotal": 2298, "npairs": 17208, "full_graph": true, "t_total": 0.42542932101059705, "full": 0.4225281790131703, "peak_gb": 17.08385536}
+{"step": 3, "nlocal": 192, "ntotal": 2298, "npairs": 17202, "full_graph": true, "t_total": 0.4208770589902997, "full": 0.41736334189772606, "peak_gb": 17.08385536}
+{"step": 4, "nlocal": 192, "ntotal": 2298, "npairs": 17242, "full_graph": true, "t_total": 0.42347932304255664, "full": 0.4196768660331145, "peak_gb": 17.117863936}
+{"step": 5, "nlocal": 192, "ntotal": 2298, "npairs": 17222, "full_graph": true, "t_total": 0.4234467279165983, "full": 0.4197304119588807, "peak_gb": 17.117863936}
+{"step": 6, "nlocal": 192, "ntotal": 2298, "npairs": 17238, "full_graph": true, "t_total": 0.4239962470019236, "full": 0.4205401650397107, "peak_gb": 17.118052864}
+{"step": 7, "nlocal": 192, "ntotal": 2336, "npairs": 17238, "full_graph": true, "t_total": 0.4245265939971432, "full": 0.4206702089868486, "peak_gb": 17.141404672}
+{"step": 8, "nlocal": 192, "ntotal": 2336, "npairs": 17244, "full_graph": true, "t_total": 0.42902253300417215, "full": 0.42524133308324963, "peak_gb": 17.142759936}
+{"step": 9, "nlocal": 192, "ntotal": 2336, "npairs": 17272, "full_graph": true, "t_total": 0.425359720014967, "full": 0.4220379430335015, "peak_gb": 17.15740672}
+{"step": 10, "nlocal": 192, "ntotal": 2336, "npairs": 17234, "full_graph": true, "t_total": 0.4244997169589624, "full": 0.4207330009667203, "peak_gb": 17.15740672}
+{"step": 11, "nlocal": 192, "ntotal": 2336, "npairs": 17242, "full_graph": true, "t_total": 0.423920416040346, "full": 0.42031727102585137, "peak_gb": 17.15740672}
+{"step": 12, "nlocal": 192, "ntotal": 2336, "npairs": 17248, "full_graph": true, "t_total": 0.430489776073955, "full": 0.4268953580176458, "peak_gb": 17.15740672}
+{"step": 13, "nlocal": 192, "ntotal": 2336, "npairs": 17268, "full_graph": true, "t_total": 0.42443377198651433, "full": 0.4205544659635052, "peak_gb": 17.159254528}
+{"step": 14, "nlocal": 192, "ntotal": 2336, "npairs": 17242, "full_graph": true, "t_total": 0.4235779370646924, "full": 0.42024769203271717, "peak_gb": 17.159254528}
+{"step": 15, "nlocal": 192, "ntotal": 2336, "npairs": 17234, "full_graph": true, "t_total": 0.4234605620149523, "full": 0.4201976760523394, "peak_gb": 17.159254528}
+{"step": 16, "nlocal": 192, "ntotal": 2336, "npairs": 17246, "full_graph": true, "t_total": 0.42386866197921336, "full": 0.4205242330208421, "peak_gb": 17.159254528}
+{"step": 17, "nlocal": 192, "ntotal": 2336, "npairs": 17270, "full_graph": true, "t_total": 0.42718893906567246, "full": 0.4234989349497482, "peak_gb": 17.16077312}
