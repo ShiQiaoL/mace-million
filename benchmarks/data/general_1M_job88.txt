@@ -1,0 +1,12 @@
+   student: N=1029000 pairs/atom 23.3 model 0.224s gap 0.002s -> 4.558e+06 atom-step/s, peak 3.9 GB
+   NEP89 rep1: Speed of this run = 3.11175e+07 atom*step/second.
+   NEP89 rep2: Speed of this run = 3.12075e+07 atom*step/second.
+   NEP89 rep3: Speed of this run = 3.12049e+07 atom*step/second.
+cycle 0: rc=0 halted=False checked=2 worst={'f_rmse': 0.07403769029527178, 'f_max': 2.300490594555517, 'frac_over': 0.001107871720116618, 'dP_bar': 878.7270000000026} density=2.10351055 retrained=True added=8 (883s)
+   segment: Loop time of 456.833 on 1 procs for 2000 steps with 1029000 atoms
+   student: N=1000188 pairs/atom 42.0 model 0.329s gap 0.001s -> 3.026e+06 atom-step/s, peak 5.8 GB
+   NEP89 rep1: Speed of this run = 2.68378e+07 atom*step/second.
+   NEP89 rep2: Speed of this run = 2.68366e+07 atom*step/second.
+   NEP89 rep3: Speed of this run = 2.68388e+07 atom*step/second.
+cycle 0: rc=0 halted=False checked=2 worst={'f_rmse': 0.024588128934861134, 'f_max': 0.24406440450357778, 'frac_over': 0.0, 'dP_bar': 953.4080000000013} density=8.5420578 retrained=False added=0 (901s)
+   segment: Loop time of 658.13 on 1 procs for 2000 steps with 1000188 atoms

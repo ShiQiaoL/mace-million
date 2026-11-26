@@ -1,0 +1,51 @@
+# Element-general NPT (equilibration + production) with relative safety stops: halt if the density drops below half of
+# its initial value or T exceeds 3x the target (a model extrapolating into unphysical states).
+#   elems  element names in LAMMPS type order;  temp (K), press (bar), dt (ps), steps, dump_every, thermo_every
+variable elems        index  "O H"
+variable data_file    index  start.data
+variable model_file   index  model.pt
+variable equil_steps  index  20000
+variable prod_steps   index  30000
+variable temp         index  300.0
+variable press        index  1.01325
+variable tdamp        index  0.1
+variable pdamp        index  1.0
+variable seed         index  20260926
+variable thermo_every index  100
+variable dt           index  0.001
+variable dump_every   index  500
+
+units           metal
+boundary        p p p
+atom_style      atomic
+atom_modify     map yes
+newton          on
+
+read_data       ${data_file}
+
+pair_style      mliap unified ${model_file} 0
+pair_coeff      * * ${elems}
+
+neighbor        2.0 bin
+neigh_modify    every 1 delay 0 check yes
+timestep        ${dt}
+velocity        all create ${temp} ${seed} mom yes rot yes dist gaussian
+fix             npt all npt temp ${temp} ${temp} ${tdamp} iso ${press} ${press} ${pdamp}
+
+variable        rho equal density
+variable        rho0 equal ${rho}
+variable        low equal "v_rho < 0.5*v_rho0"
+variable        hot equal "temp > 3.0*v_temp"
+fix             safety all halt 100 v_low > 0.5 error soft message yes
+fix             safety2 all halt 100 v_hot > 0.5 error soft message yes
+thermo          ${thermo_every}
+thermo_style    custom step temp pe ke etotal press vol density
+thermo_modify   flush yes
+
+run             ${equil_steps}
+write_restart   after_equil.restart
+reset_timestep  0
+dump            traj all custom ${dump_every} traj.lammpstrj id type x y z
+dump_modify     traj sort id
+run             ${prod_steps}
+write_restart   after_prod.restart

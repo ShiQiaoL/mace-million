@@ -1,0 +1,49 @@
+# One MD segment of the active-learning (on-the-fly) loop.  Element-general: element names come from -var elems.
+#   start_file   LAMMPS data file (first segment) or restart file (later segments)
+#   restart      0 -> read_data + velocity create ; 1 -> read_restart
+#   model_file   ML-IAP model (.pt) of the current student
+#   elems        element names in LAMMPS type order, e.g. "O H"
+#   steps, dt (ps), temp (K), press (bar; <=0 -> NVT), dump_every, thermo_every, seed
+variable start_file   index  start.data
+variable restart      index  0
+variable model_file   index  model.pt
+variable elems        index  "O H"
+variable steps        index  10000
+variable dt           index  0.001
+variable temp         index  300.0
+variable press        index  1.01325
+variable dump_every   index  1000
+variable thermo_every index  100
+variable seed         index  20260926
+
+units           metal
+boundary        p p p
+atom_style      atomic
+atom_modify     map yes
+newton          on
+
+if "${restart} == 0" then "read_data ${start_file}" else "read_restart ${start_file}"
+
+pair_style      mliap unified ${model_file} 0
+pair_coeff      * * ${elems}
+
+neighbor        2.0 bin
+neigh_modify    every 1 delay 0 check yes
+timestep        ${dt}
+
+if "${restart} == 0" then "velocity all create ${temp} ${seed} mom yes rot yes dist gaussian"
+if "${press} > 0" then "fix ens all npt temp ${temp} ${temp} 0.1 iso ${press} ${press} 1.0" else "fix ens all nvt temp ${temp} ${temp} 0.1"
+
+# safety stops: a student far outside its training data shows up as runaway density / temperature
+variable        sdens equal density
+variable        shot equal "temp > 3.0*v_temp"
+fix             safety all halt 100 v_sdens < 0.3 error soft message yes
+fix             safety2 all halt 100 v_shot > 0.5 error soft message yes
+
+thermo          ${thermo_every}
+thermo_style    custom step temp pe ke etotal press vol density
+thermo_modify   flush yes
+dump            traj all custom ${dump_every} segment.lammpstrj id type x y z
+dump_modify     traj sort id
+run             ${steps}
+write_restart   segment_end.restart

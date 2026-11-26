@@ -1,0 +1,73 @@
+job 641786.<h200_node> on <h200_node> started Thu Oct  1 08:40:51 PM +08 2026
+===== matpes_r2scan  head=default  (Thu Oct  1 08:40:52 PM +08 2026)
+variant=fp64_fused N=12,288 box=[49.655 49.655 49.655] chunk=4096  model resident 0.073 GB
+neighbour list: MN=101 edges=1,102,208 (89.70/atom) t=0.4s  alloc=0.08 GB
+[rep 0] E=-64624.679635 eV  t=48.82s (2.517e+02 atom-step/s)  peak=11.62 GB  persistent=8668 B/atom  ({'pos': 24.0, 'spidx': 2.0, 'NL': 404.0, 'NN': 4.0, 'H1': 4096.0, 'G1': 4096.0, 'F': 24.0, 'loc': 4.0, 'perm': 8.0, 'cell': 6.0})
+REPLICA CHECK vs full-graph MACE on the 192-atom base cell: every one of 12,288 atoms compared  max|dF|=4.153e-13  RMS(dF)=7.582e-14 eV/A   E/N - E_base/N_base = +1.066e-14 eV/atom
+variant=fp32_fused N=12,288 box=[49.655 49.655 49.655] chunk=4096  model resident 0.036 GB
+neighbour list: MN=101 edges=1,102,208 (89.70/atom) t=0.2s  alloc=0.04 GB
+[rep 0] E=-64624.678467 eV  t=45.08s (2.726e+02 atom-step/s)  peak=5.87 GB  persistent=4572 B/atom  ({'pos': 24.0, 'spidx': 2.0, 'NL': 404.0, 'NN': 4.0, 'H1': 2048.0, 'G1': 2048.0, 'F': 24.0, 'loc': 4.0, 'perm': 8.0, 'cell': 6.0})
+REPLICA CHECK vs full-graph MACE on the 192-atom base cell: every one of 12,288 atoms compared  max|dF|=5.701e-05  RMS(dF)=1.264e-05 eV/A   E/N - E_base/N_base = -3.080e-06 eV/atom
+saved model.pt: chunk=16384 spline_grid=512 dtype=torch.float32 elements=89
+  lammps parity rc=0  ThreePassMLIAP: head 'default' (index 0), layers: fast
+reference: N=192 E=-1009.760619 eV  Fmax=1.7436 eV/A  -> ref.npz
+RMS(dF) = 4.958e-06 eV/A   max|dF| = 1.687e-05 eV/A   rel = 8.230e-06
+worst atom index (0-based, sorted by id) = 40: Fa=[ 0.38151184 -0.49363154 -0.29919504] Fb=[ 0.38150696 -0.49361467 -0.29918912]
+PASS (tolerance: max|dF| <= 0.001 eV/A, rel <= None)
+  [water64_5x5x4_N19200] rc=0  Loop time of 4.66966 on 1 procs for 30 steps with 19200 atoms
+  [water64_10x10x10_N192000] rc=0  Loop time of 33.5353 on 1 procs for 30 steps with 192000 atoms
+  [water64_20x16x16_N983040] rc=0  Loop time of 150.006 on 1 procs for 30 steps with 983040 atoms
+===== matpes_pbe  head=default  (Thu Oct  1 08:51:06 PM +08 2026)
+variant=fp64_fused N=12,288 box=[49.655 49.655 49.655] chunk=4096  model resident 0.073 GB
+neighbour list: MN=101 edges=1,102,208 (89.70/atom) t=0.2s  alloc=0.08 GB
+[rep 0] E=-59748.390194 eV  t=48.81s (2.517e+02 atom-step/s)  peak=11.62 GB  persistent=8668 B/atom  ({'pos': 24.0, 'spidx': 2.0, 'NL': 404.0, 'NN': 4.0, 'H1': 4096.0, 'G1': 4096.0, 'F': 24.0, 'loc': 4.0, 'perm': 8.0, 'cell': 6.0})
+REPLICA CHECK vs full-graph MACE on the 192-atom base cell: every one of 12,288 atoms compared  max|dF|=4.007e-13  RMS(dF)=7.570e-14 eV/A   E/N - E_base/N_base = -8.882e-16 eV/atom
+variant=fp32_fused N=12,288 box=[49.655 49.655 49.655] chunk=4096  model resident 0.036 GB
+neighbour list: MN=101 edges=1,102,208 (89.70/atom) t=0.2s  alloc=0.04 GB
+[rep 0] E=-59748.390625 eV  t=45.10s (2.724e+02 atom-step/s)  peak=5.87 GB  persistent=4572 B/atom  ({'pos': 24.0, 'spidx': 2.0, 'NL': 404.0, 'NN': 4.0, 'H1': 2048.0, 'G1': 2048.0, 'F': 24.0, 'loc': 4.0, 'perm': 8.0, 'cell': 6.0})
+REPLICA CHECK vs full-graph MACE on the 192-atom base cell: every one of 12,288 atoms compared  max|dF|=5.322e-05  RMS(dF)=1.301e-05 eV/A   E/N - E_base/N_base = +0.000e+00 eV/atom
+saved model.pt: chunk=16384 spline_grid=512 dtype=torch.float32 elements=89
+  lammps parity rc=0  ThreePassMLIAP: head 'default' (index 0), layers: fast
+reference: N=192 E=-933.568597 eV  Fmax=2.1932 eV/A  -> ref.npz
+RMS(dF) = 4.904e-06 eV/A   max|dF| = 1.586e-05 eV/A   rel = 6.005e-06
+worst atom index (0-based, sorted by id) = 7: Fa=[-0.21604181  1.32976045 -1.1229229 ] Fb=[-0.21605131  1.32974459 -1.12293109]
+PASS (tolerance: max|dF| <= 0.001 eV/A, rel <= None)
+  [water64_5x5x4_N19200] rc=0  Loop time of 4.43601 on 1 procs for 30 steps with 19200 atoms
+  [water64_10x10x10_N192000] rc=0  Loop time of 33.5378 on 1 procs for 30 steps with 192000 atoms
+  [water64_20x16x16_N983040] rc=0  Loop time of 150.06 on 1 procs for 30 steps with 983040 atoms
+===== mh1  head=omat_pbe  (Thu Oct  1 09:00:54 PM +08 2026)
+variant=fp64_fused N=12,288 box=[49.655 49.655 49.655] chunk=4096  model resident 0.052 GB
+neighbour list: MN=101 edges=1,102,208 (89.70/atom) t=0.2s  alloc=0.06 GB
+[rep 0] E=-59709.545317 eV  t=49.31s (2.492e+02 atom-step/s)  peak=23.95 GB  persistent=33244 B/atom  ({'pos': 24.0, 'spidx': 2.0, 'NL': 404.0, 'NN': 4.0, 'H1': 16384.0, 'G1': 16384.0, 'F': 24.0, 'loc': 4.0, 'perm': 8.0, 'cell': 6.0})
+REPLICA CHECK vs full-graph MACE on the 192-atom base cell: every one of 12,288 atoms compared  max|dF|=4.394e-13  RMS(dF)=7.668e-14 eV/A   E/N - E_base/N_base = +1.776e-15 eV/atom
+variant=fp32_fused N=12,288 box=[49.655 49.655 49.655] chunk=4096  model resident 0.027 GB
+neighbour list: MN=101 edges=1,102,208 (89.70/atom) t=0.2s  alloc=0.03 GB
+[rep 0] E=-59709.541016 eV  t=45.49s (2.701e+02 atom-step/s)  peak=12.03 GB  persistent=16860 B/atom  ({'pos': 24.0, 'spidx': 2.0, 'NL': 404.0, 'NN': 4.0, 'H1': 8192.0, 'G1': 8192.0, 'F': 24.0, 'loc': 4.0, 'perm': 8.0, 'cell': 6.0})
+REPLICA CHECK vs full-graph MACE on the 192-atom base cell: every one of 12,288 atoms compared  max|dF|=5.577e-05  RMS(dF)=1.239e-05 eV/A   E/N - E_base/N_base = -4.609e-06 eV/atom
+saved model.pt: chunk=16384 spline_grid=512 dtype=torch.float32 elements=89
+<cluster_workdir>/jobs/641786.<h200_node>.SC: line 30: 256818 Aborted                 MACE3P_GRAPHS=1 timeout 900 lmp -k on g 1 -sf kk -pk kokkos newton on neigh half -in $REPO/inputs/in.water_scan.lmp -var data_file $REPO/examples/data/water64_1x1x1_N192.data -var model_file model.pt -var elems "O H" -var run_steps 10 -var dump_forces 10 -var dt 0.001 -var skin 2.0 -log log.lammps > lmp_parity.out 2>&1
+  lammps parity rc=134  
+[<h200_node>:256819] *** End of error message ***
+reference: N=192 E=-932.961646 eV  Fmax=2.1220 eV/A  -> ref.npz
+    with open(path) as fh:
+         ^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'forces.dump'
+<cluster_workdir>/jobs/641786.<h200_node>.SC: line 58: 257478 Aborted                 MACE3P_GRAPHS=1 MACE3P_CHUNK=16384 MACE3P_LOG=speed_$DATA.jsonl timeout 900 lmp -k on g 1 -sf kk -pk kokkos newton on neigh half -in $REPO/inputs/in.water_scan.lmp -var data_file $ST/$DATA.data -var model_file model.pt -var elems "O H" -var run_steps 30 -var dt 0.001 -var skin 2.0 -var thermo_every 10 -log log_$DATA.lammps > lmp_$DATA.out 2>&1
+  [water64_5x5x4_N19200] rc=134  
+job finished Thu Oct  1 09:03:43 PM +08 2026
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			Resource Usage on 2026-10-01 21:03:43.804937:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	JobId: 641786.<h200_node>
+	Project: <PROJECT>
+	Exit Status: 0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	NCPUs: Requested(12), Used(12)
+	CPU Time Used: 00:21:32
+	Memory: Requested(225gb), Used(9485720kb)
+	Vmem Used: 660942560kb
+	Walltime: Requested(02:00:00), Used(00:22:57)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	Execution Nodes Used: (<h200_node>:ngpus=1:ncpus=12:mem=235929600kb)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	No GPU-related information available for this job.

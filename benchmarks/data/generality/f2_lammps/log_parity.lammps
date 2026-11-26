@@ -1,0 +1,153 @@
+LAMMPS (11 Feb 2026 - Development)
+KOKKOS mode with Kokkos version 5.0.2 is enabled
+  using double precision
+  using view layout = legacy
+  will use up to 1 GPU(s) per node
+  using 1 OpenMP thread(s) per MPI task
+package kokkos
+package kokkos newton on neigh half
+# MACE-MPA-0 / liquid water / ML-IAP memory-scan input.
+# All knobs come from -var on the command line:
+#   data_file    LAMMPS data file (atom_style atomic, type 1 = O, type 2 = H, Masses section present)
+#   model_file   converted ML-IAP model (.pt)
+#   run_steps    0 -> one force call (setup) only; N -> N MD steps
+#   skin         neighbor skin in Angstrom (LAMMPS default for units metal is 2.0)
+#   scale        isotropic box scale factor applied with remap (1.0 = as read; density ~ 1/scale^3)
+#   dump_forces  0 -> no dump; k -> dump per-atom forces every k steps (parity checks)
+#   thermo_every thermo output interval
+#   seed, temp   velocity initialisation
+#   dt           timestep in ps (default 0.0005 = 0.5 fs)
+#   rep          replicate the box rep x rep x rep after reading (default 1)
+# index-style so that "-var data_file ..." on the command line takes precedence (a later
+# "variable ... index" for an existing variable is ignored; "string" style would error out)
+variable        elems        index "O H"
+variable data_file    index  water64_2x2x2_N1536.data
+variable model_file   index  model.pt
+variable run_steps    index  0
+variable skin         index  2.0
+variable scale        index  1.0
+variable dump_forces  index  0
+variable thermo_every index  1
+variable seed         index  12345
+variable temp         index  300.0
+variable dt           index  0.0005
+variable rep          index  1
+
+units           metal
+boundary        p p p
+atom_style      atomic
+atom_modify     map yes
+newton          on
+
+read_data       ${data_file}
+read_data       <REPO>/examples/data/water64_1x1x1_N192.data
+Reading data file ...
+  orthogonal box = (0 0 0) to (12.4138 12.4138 12.4138)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  192 atoms
+  read_data CPU = 0.010 seconds
+if "${rep} > 1" then "replicate ${rep} ${rep} ${rep}"
+
+if "${scale} != 1.0" then     "change_box all x scale ${scale} y scale ${scale} z scale ${scale} remap"
+
+pair_style      mliap unified ${model_file} 0
+pair_style      mliap unified 7net-0.lpass.pt 0
+pair_coeff      * * ${elems}
+pair_coeff      * * O H
+
+neighbor        ${skin} bin
+neighbor        2.0 bin
+neigh_modify    every 1 delay 0 check yes
+
+timestep        ${dt}
+timestep        0.001
+velocity        all create ${temp} ${seed} mom yes rot yes dist gaussian
+velocity        all create 300.0 ${seed} mom yes rot yes dist gaussian
+velocity        all create 300.0 12345 mom yes rot yes dist gaussian
+fix             int all nve
+
+thermo          ${thermo_every}
+thermo          1
+thermo_style    custom step atoms temp pe ke etotal press vol density cpu
+thermo_modify   flush yes
+
+if "${dump_forces} > 0" then     "dump f all custom ${dump_forces} forces.dump id type x y z fx fy fz"     "dump_modify f sort id format float %20.12e"
+dump f all custom ${dump_forces} forces.dump id type x y z fx fy fz
+dump f all custom 10 forces.dump id type x y z fx fy fz
+dump_modify f sort id format float %20.12e
+
+run             ${run_steps}
+run             10
+
+CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE
+
+Your simulation uses code contributions which should be cited:
+
+- KOKKOS package: https://doi.org/10.1145/3731599.3767498
+
+@inproceedings{Johansson25,
+ author = {A. Johansson and E. Weinberg and C. Trott and M. McCarthy and S. Moore},
+ title = {{LAMMPS-KOKKOS}: {P}erformance Portable Molecular Dynamics Across Exascale Architectures},
+ year = 2025,
+ booktitle = {Proceedings of the SC '25 Workshops of the International Conference for High Performance Computing,
+  Networking, Storage and Analysis},
+ pages = {1217–1232},
+}
+
+CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE-CITE
+
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 7
+  ghost atom cutoff = 7
+  binsize = 7, bins = 2 2 2
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair mliap/kk, perpetual
+      attributes: full, newton on, kokkos_device
+      pair build: full/bin/kk/device
+      stencil: full/bin/3d
+      bin: kk/device
+Per MPI rank memory allocation (min/avg/max) = 108.6 | 108.6 | 108.6 Mbytes
+   Step        Atoms         Temp          PotEng         KinEng         TotEng         Press          Volume        Density          CPU      
+         0         192   300           -931.20647      7.4066063     -923.79986      54137.594      1912.9968      1.0008041      0            
+         1         192   301.42369     -931.22112      7.4417554     -923.77936      42957.947      1912.9968      1.0008041      0.055227406  
+         2         192   307.99389     -931.42658      7.6039649     -923.82261      15865.674      1912.9968      1.0008041      0.10841559   
+         3         192   297.94402     -931.19039      7.3558469     -923.83455     -14709.714      1912.9968      1.0008041      0.16244022   
+         4         192   266.36745     -930.32169      6.5762628     -923.74542     -36005.209      1912.9968      1.0008041      0.21837514   
+         5         192   253.69827     -929.97071      6.2634774     -923.70723     -41379.625      1912.9968      1.0008041      0.27103501   
+         6         192   280.53131     -930.68853      6.92595       -923.76258     -30057.45       1912.9968      1.0008041      0.32366456   
+         7         192   321.11516     -931.74225      7.9279119     -923.81433     -6155.4123      1912.9968      1.0008041      0.37653112   
+         8         192   347.36654     -932.39915      8.5760239     -923.82312      21389.515      1912.9968      1.0008041      0.42995161   
+         9         192   351.30131     -932.50099      8.6731684     -923.82783      41532.745      1912.9968      1.0008041      0.48329224   
+        10         192   339.66695     -932.15328      8.3859312     -923.76735      45937.032      1912.9968      1.0008041      0.53575168   
+Loop time of 0.536223 on 1 procs for 10 steps with 192 atoms
+
+Performance: 1.611 ns/day, 14.895 hours/ns, 18.649 timesteps/s, 3.581 katom-step/s
+99.3% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.5314     | 0.5314     | 0.5314     |   0.0 | 99.10
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0.00050622 | 0.00050622 | 0.00050622 |   0.0 |  0.09
+Output  | 0.0011835  | 0.0011835  | 0.0011835  |   0.0 |  0.22
+Modify  | 0.001017   | 0.001017   | 0.001017   |   0.0 |  0.19
+Other   |            | 0.002121   |            |       |  0.40
+
+Nlocal:            192 ave         192 max         192 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:           1695 ave        1695 max        1695 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:              0 ave           0 max           0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+FullNghs:        27546 ave       27546 max       27546 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 27546
+Ave neighs/atom = 143.46875
+Neighbor list builds = 0
+Dangerous builds = 0
+Total wall time: 0:00:11
